@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { normalizedPath } from "./policy.js";
 
 export interface Task {
   schema_version: 1;
@@ -15,7 +16,8 @@ export interface Check {
   timeout_seconds: number;
 }
 export interface Config {
-  schema_version: 1;
+  schema_version: 1 | 2;
+  policy?: { editable_paths: string[]; protected_paths: string[] };
   checks: Check[];
   limits: { attempts: number; agent_seconds: number; run_seconds: number };
   model: string | null;
@@ -79,9 +81,26 @@ export function parseTask(data: unknown): Task {
   return structuredClone(data) as unknown as Task;
 }
 export function parseConfig(data: unknown): Config {
-  fields(data, ["schema_version", "checks"], ["limits", "model"]);
-  if (data.schema_version !== 1 || !Array.isArray(data.checks))
+  fields(data, ["schema_version", "checks"], ["limits", "model", "policy"]);
+  if (
+    ![1, 2].includes(data.schema_version as number) ||
+    !Array.isArray(data.checks)
+  )
     throw new Error("Invalid configuration");
+  if (data.schema_version === 1 && Object.hasOwn(data, "policy"))
+    throw new Error("Version 1 does not accept policy");
+  if (data.schema_version === 2) {
+    fields(data.policy, ["editable_paths", "protected_paths"]);
+    for (const key of ["editable_paths", "protected_paths"]) {
+      strings(data.policy[key]);
+      (data.policy[key] as string[]).forEach(normalizedPath);
+      if (
+        new Set(data.policy[key] as string[]).size !==
+        (data.policy[key] as string[]).length
+      )
+        throw new Error("Duplicate policy paths");
+    }
+  }
   const checks: Check[] = data.checks.map((c) => {
     fields(c, ["name", "argv"], ["timeout_seconds"]);
     nonempty(c.name);
@@ -98,7 +117,10 @@ export function parseConfig(data: unknown): Config {
   const model = data.model ?? null;
   if (model !== null) nonempty(model);
   return {
-    schema_version: 1,
+    schema_version: data.schema_version,
+    ...(data.schema_version === 2
+      ? { policy: structuredClone(data.policy) }
+      : {}),
     checks,
     limits: { attempts: 3, agent_seconds: 1200, run_seconds: 5400, ...limits },
     model,

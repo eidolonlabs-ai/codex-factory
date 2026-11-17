@@ -1,5 +1,14 @@
+import {
+  assessReadiness,
+  configDigest,
+  missingEvidence,
+  type AcceptanceRecord,
+} from "./readiness.js";
+import { buildReviewPacket } from "./review-packet.js";
+import { git } from "./workspace.js";
+import { resolvePolicy, policyDigest } from "./policy.js";
 import { InterruptScope } from "./process.js";
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import {
   writeFileSync,
   readFileSync,
@@ -50,6 +59,9 @@ export interface RunResult {
   reason?: string;
   duration_seconds?: number;
   config_sha256?: string;
+  policy_sha256?: string;
+  missing_evidence?: string[];
+  task?: Task;
   candidate?: string;
   review?: ReviewResult;
 }
@@ -74,12 +86,28 @@ export async function runTask(
   task: Task,
   inputConfig: Config,
   codex = "codex",
+  inputAcceptance?: AcceptanceRecord,
 ): Promise<RunResult> {
   const config = structuredClone(inputConfig); // Freeze the invocation's command list against caller/worker edits.
   if (!config.checks.length)
     throw new Error(
       "Configure project checks before running an implementation task",
     );
+  const acceptance = inputAcceptance
+    ? structuredClone(inputAcceptance)
+    : undefined;
+  if (config.schema_version === 2 && !acceptance)
+    throw new Error("Version 2 managed runs require an acceptance record");
+  if (acceptance) {
+    const readiness = assessReadiness(task, config, acceptance);
+    if (!readiness.ready) throw new Error(readiness.blockers.join("; "));
+    if (
+      git(repo, "rev-parse", "--verify", task.base_ref + "^{commit}") !==
+      acceptance.base
+    )
+      throw new Error("Acceptance base changed");
+  }
+  const policy = resolvePolicy(config);
   const start = performance.now(),
     deadline = start + config.limits.run_seconds * 1000,
     id = randomUUID().replaceAll("-", "");
@@ -102,6 +130,8 @@ export async function runTask(
     run_dir: w.run_dir,
     lock: w.lock,
     attempts: [],
+    task: structuredClone(task),
+    policy_sha256: policyDigest(policy),
   };
   const save = (status: string, reason?: string) => {
     result.status = status;
@@ -122,9 +152,8 @@ export async function runTask(
         join(w.run_dir, `${name}.json`),
         JSON.stringify(value, null, 2) + "\n",
       );
-    result.config_sha256 = createHash("sha256")
-      .update(readFileSync(join(w.run_dir, "config.json")))
-      .digest("hex");
+    result.config_sha256 = configDigest(config);
+    if (acceptance) writeResult(join(w.run_dir, "acceptance"), acceptance);
     save("created");
     let feedback = "";
     for (let attempt = 1; attempt <= config.limits.attempts; attempt++) {
@@ -152,8 +181,10 @@ export async function runTask(
       if (config.model) argv.push("--model", config.model);
       argv.push("-");
       const prompt =
-        "Implement the approved task below. Follow AGENTS.md. Stay within allowed_paths. Do not edit harness controls, acceptance tests, or commit/publish/merge. Report completed=false if requirements are ambiguous or access is blocked. Your completion report is not the verification result.\nTASK DATA:\n" +
+        "Implement the approved task below. Follow AGENTS.md. Stay within allowed_paths. Do not edit harness controls or protected acceptance inputs, or commit/publish/merge. Application unit tests may be edited only within task and adopted policy paths. The controller owns the configured acceptance checks and will run them after your report. Do not launch service/network acceptance checks inside the worker sandbox; you may run available local unit checks. Mark completed=true when the scoped implementation is complete, noting unrun checks in the summary. Mark completed=false if implementation itself is blocked or requirements are ambiguous. Your completion report is not the verification result.\nTASK DATA:\n" +
         JSON.stringify(task) +
+        "\nADOPTED POLICY:\n" +
+        JSON.stringify(policy) +
         "\nPREVIOUS VERIFICATION:\n" +
         feedback;
       const p = await runProcess(
@@ -201,7 +232,7 @@ export async function runTask(
         );
         return result;
       }
-      const violations = scopeViolations(w, task.allowed_paths);
+      const violations = scopeViolations(w, task.allowed_paths, policy);
       await interrupts.checkpoint();
       if (violations.length) {
         save("failed", violations.join("\n"));
@@ -213,6 +244,9 @@ export async function runTask(
       entry.verification = v;
       if (v.passed) {
         result.candidate = v.candidate!;
+        result.missing_evidence = acceptance
+          ? missingEvidence(acceptance, result.candidate)
+          : [];
         save("reviewing");
         const review = await reviewCandidate(
           w,
@@ -222,6 +256,7 @@ export async function runTask(
             performance.now() + config.limits.agent_seconds * 1000,
           ),
           codex,
+          buildReviewPacket(task, acceptance, v, result.candidate),
         );
         await interrupts.checkpoint();
         result.review = review;
@@ -231,8 +266,10 @@ export async function runTask(
           snapshotCandidate(w) === result.candidate
         )
           save(
-            "ready_for_human_review",
-            "Required checks passed; inspect review findings before merging",
+            acceptance && missingEvidence(acceptance, result.candidate).length
+              ? "awaiting_manual_evidence"
+              : "ready_for_human_review",
+            "Checks passed and review collected; owner disposition and any missing live evidence remain required",
           );
         else
           save(

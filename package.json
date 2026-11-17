@@ -13,8 +13,11 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc",
+    "plugin:build": "node scripts/build-plugin.mjs",
+    "plugin:check": "node scripts/build-plugin.mjs --check",
+    "plugin:pack": "node scripts/build-plugin.mjs --check --archive",
     "verify:demo": "node --import tsx harness/cli.ts verify --config examples/demo/harness.json",
-    "format:check": "prettier --check \"harness/**/*.ts\" \"tests/**/*.ts\""
+    "format:check": "prettier --check \"harness/**/*.ts\" \"tests/**/*.ts\" \"scripts/**/*.mjs\" \"plugin-src/scripts/**/*.mjs\""
   },
   "dependencies": {
     "fflate": "0.8.3",
@@ -24,6 +27,7 @@
     "@types/node": "22.20.5",
     "prettier": "3.10.1",
     "tsx": "4.23.15",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "esbuild": "0.28.2"
   }
 }

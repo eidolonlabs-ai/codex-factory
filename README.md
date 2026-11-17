@@ -8,6 +8,16 @@ An example Codex-specific repository template for moving from an ambiguous proje
 
 The template is application-stack independent. It includes a small TypeScript controller, Codex instructions and skills, offline tests, and the deliberately incomplete ChronoGraph intake benchmark. It does not include a built ChronoGraph application.
 
+## Use as a plugin
+
+The same workflow is also packaged under `plugins/codex-harness`, with a GitHub
+marketplace catalog, six skills, templates, explicit project setup, and a
+standalone Node runtime. It can be adopted in an existing project without
+copying this template's npm setup. See [plugin installation and adoption](docs/plugin.md),
+[validation evidence](docs/plugin-validation.md), and the
+[design coverage assessment](docs/design-coverage.md). Public-directory
+submission remains a later release step.
+
 ## Start in Codex Desktop
 
 1. Open this repository as a project in **Codex Desktop**. Inspect its instructions and trust the project only if you approve them. Start a new chat so newly added skills and project agents can be discovered.
@@ -75,3 +85,10 @@ The controller and verification commands run as trusted host code. Worktrees, lo
 ## License
 
 [MIT](LICENSE), including the supplied ChronoGraph benchmark document and extracted text. This is an independent community example, not an official OpenAI product.
+
+## Solo execution modes
+
+Use the same workflow from Desktop or CLI. Interactive work is the default;
+explicitly requested unattended tasks use the managed controller from either
+interface. One builder per task and sequential work are the default. See
+[execution modes](docs/execution-modes.md).

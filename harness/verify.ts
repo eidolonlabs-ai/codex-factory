@@ -1,6 +1,12 @@
 import { InterruptScope } from "./process.js";
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
+import { lstatSync } from "node:fs";
+import {
+  classifyChanges,
+  legacyProtected,
+  type ProtectionPolicy,
+} from "./policy.js";
 import type { Check } from "./models.js";
 import { runProcess, type ProcessResult } from "./process.js";
 import {
@@ -14,31 +20,34 @@ export interface VerificationResult {
   checks: (ProcessResult & { name: string })[];
   candidate?: string;
 }
-const protectedPaths = [
-  "harness",
-  "harness.json",
-  "AGENTS.md",
-  ".agents",
-  ".codex",
-  ".github",
-  "tests",
-  "schemas",
-  "benchmarks",
-  "package.json",
-  "package-lock.json",
-  "tsconfig.json",
-];
-const within = (path: string, prefix: string) =>
-  path === prefix || path.startsWith(prefix + "/");
-export function scopeViolations(w: Workspace, allowed: string[]): string[] {
-  return changedPaths(w).flatMap((path) => [
-    ...(!allowed.some((p) => within(path, p))
-      ? [`outside task scope: ${path}`]
-      : []),
-    ...(protectedPaths.some((p) => within(path, p))
-      ? [`protected change needs human review: ${path}`]
-      : []),
-  ]);
+export function scopeViolations(
+  w: Workspace,
+  allowed: string[],
+  policy: ProtectionPolicy = {
+    version: 1,
+    editable_paths: [],
+    protected_paths: legacyProtected,
+  },
+): string[] {
+  const paths = changedPaths(w);
+  const findings = classifyChanges(paths, allowed, policy).map(
+    (f) => `${f.reason}: ${f.path}`,
+  );
+  if (policy.version === 2)
+    for (const path of paths) {
+      const parts = path.split("/");
+      for (let i = 1; i <= parts.length; i++) {
+        try {
+          if (lstatSync(join(w.path, ...parts.slice(0, i))).isSymbolicLink()) {
+            findings.push(`symlink change needs human review: ${path}`);
+            break;
+          }
+        } catch (e) {
+          if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
+        }
+      }
+    }
+  return findings;
 }
 export async function verify(
   w: Workspace,

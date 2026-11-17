@@ -55,7 +55,7 @@ test("successful task requires independent checks and separate review", async (t
     config(),
     fake(
       r.root,
-      `if(args.includes('exec')){fs.writeFileSync('src/a','done');${report}}else{console.log('Review with finding');}`,
+      `if(args.includes('exec')&&!args.includes('read-only')){fs.writeFileSync('src/a','done');${report}}else{fs.writeFileSync(args[args.indexOf('--output-last-message')+1],'Review with finding');console.log('Review with finding');}`,
     ),
   );
   assert.equal(result.status, "ready_for_human_review");

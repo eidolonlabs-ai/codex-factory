@@ -1,0 +1,10 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Solo Harness Pilot</title>
+<style>body{font:18px system-ui;max-width:650px;margin:70px auto;padding:24px;background:#fafaf7;color:#20322c}input,button{font:inherit;padding:10px}button{background:#23644e;color:white;border:0;border-radius:4px}li{margin:12px 0}#status{min-height:28px}</style>
+<h1>Notes</h1><p>A disposable app for testing the harness workflow.</p>
+<form><label for="title">Note title</label><br><input id="title" name="title" maxlength="120"><button>Save note</button></form><p id="status" role="status"></p><ul id="notes"></ul>
+<script type="module">
+const status=document.querySelector('#status'),list=document.querySelector('#notes');
+async function load(){const r=await fetch('/api/notes');if(!r.ok)throw Error('Cannot load notes');list.replaceChildren(...(await r.json()).map(n=>{const li=document.createElement('li');li.textContent=n.title;return li;}));}
+document.querySelector('form').addEventListener('submit',async e=>{e.preventDefault();try{const r=await fetch('/api/notes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:document.querySelector('#title').value})});if(!r.ok)throw Error(await r.text());await load();status.textContent='Saved';document.querySelector('#title').value='';}catch(err){status.textContent=err.message;}});
+load().catch(err=>status.textContent=err.message);
+</script></html>

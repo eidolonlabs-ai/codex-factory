@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "checks": [],
+  "limits": {"attempts": 3, "agent_seconds": 1200, "run_seconds": 5400}
+}

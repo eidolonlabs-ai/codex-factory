@@ -28,3 +28,8 @@ Ctrl-C produces interrupted status and terminates the subprocess group. A hard k
 Managed runs preserve worktrees, branches and review snapshot commits. Inspect with `git worktree list`. Clean up only after saving work/evidence, using ordinary Git worktree commands and explicit branch decisions. Never use `git clean -fdx` as a recovery shortcut.
 
 The local evidence is reproducibility information, not protection against a hostile worker that can access the common Git directory. Stronger isolation belongs in an external runner/verifier deployment.
+
+## Interactive and managed execution
+
+An interactive CLI session follows the same [solo workflow](execution-modes.md)
+as Desktop. Only a controller-owned run gets controller deadlines and retries.

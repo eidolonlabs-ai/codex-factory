@@ -11,7 +11,11 @@ export interface DoctorReport {
   base?: string;
   codex_version?: string;
 }
-export function doctor(repo: string, codex = "codex"): DoctorReport {
+export function doctor(
+  repo: string,
+  codex = "codex",
+  mode: "managed" | "verify" = "managed",
+): DoctorReport {
   const result: DoctorReport = {
     healthy: true,
     errors: [],
@@ -28,7 +32,7 @@ export function doctor(repo: string, codex = "codex"): DoctorReport {
     );
   try {
     result.base = git(repo, "rev-parse", "--verify", "HEAD");
-    if (git(repo, "status", "--porcelain"))
+    if (mode === "managed" && git(repo, "status", "--porcelain"))
       result.errors.push(
         "Repository is dirty; commit or move changes before a managed run",
       );
@@ -41,28 +45,29 @@ export function doctor(repo: string, codex = "codex"): DoctorReport {
   } catch (e) {
     result.errors.push(`Project configuration: ${String(e)}`);
   }
-  try {
-    const probes: [string[], string[]][] = [
-      [["--version"], []],
-      [
-        ["exec", "--help"],
-        ["--sandbox", "--json", "--output-schema", "--output-last-message"],
-      ],
-      [["review", "--help"], ["--base"]],
-    ];
-    for (const [args, required] of probes) {
-      const out = execFileSync(codex, args, {
-        encoding: "utf8",
-        timeout: 10000,
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-      if (required.some((flag) => !out.includes(flag)))
-        throw new Error("Unsupported Codex capabilities");
-      if (args[0] === "--version") result.codex_version = out.trim();
+  if (mode === "managed")
+    try {
+      const probes: [string[], string[]][] = [
+        [["--version"], []],
+        [
+          ["exec", "--help"],
+          ["--sandbox", "--json", "--output-schema", "--output-last-message"],
+        ],
+        [["review", "--help"], ["--base"]],
+      ];
+      for (const [args, required] of probes) {
+        const out = execFileSync(codex, args, {
+          encoding: "utf8",
+          timeout: 10000,
+          stdio: ["ignore", "pipe", "pipe"],
+        });
+        if (required.some((flag) => !out.includes(flag)))
+          throw new Error("Unsupported Codex capabilities");
+        if (args[0] === "--version") result.codex_version = out.trim();
+      }
+    } catch (e) {
+      result.errors.push(`Codex: ${String(e)}`);
     }
-  } catch (e) {
-    result.errors.push(`Codex: ${String(e)}`);
-  }
   result.healthy = !result.errors.length;
   return result;
 }

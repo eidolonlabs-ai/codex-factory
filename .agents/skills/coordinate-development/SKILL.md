@@ -1,10 +1,10 @@
 ---
 name: coordinate-development
-description: Use when coordinating a project in Codex Desktop from intake through clarification, approved tasks, parallel Worktree builders, integration, verification, and review.
+description: Coordinate solo development from Desktop or CLI through clarification, approved tasks, verification, review and handoff.
 ---
-# Coordinate development in Desktop
+# Coordinate solo development
 
-Stay in the app. The default workflow never starts `codex exec` or `npm run harness -- run`. The shared `npm run harness -- verify` command runs checks only; it does not launch an agent/controller loop.
+Desktop and CLI are interfaces. Interactive work is the default for exploration and small edits. An explicit request to run an approved task unattended selects controller-managed execution from either interface; reuse that authorization. The controller launches a separate Codex process and supervises that run, not the parent chat. Use `npm run harness -- doctor` and task preflight before `npm run harness -- run`. Monitor the recorded run ID/status until completion; do not assume closing the interface preserves the process. The verifier runs checks without launching a builder.
 
 ## Intake and decisions
 
@@ -15,6 +15,8 @@ Roles inherit parent permissions. Ask the owner to select read-only permissions 
 Once resolved, summarize the proposed spec and obtain approval. Reuse approval already given for that exact scope. Save the approved specification and decision record. Split it into tasks using `docs/templates/desktop-task.md`; retain the shared task JSON fields and add Desktop ownership/dependency metadata in the companion task card.
 
 ## Builders
+
+Use one builder and sequential tasks by default. Parallel worktrees are optional for independent work.
 
 For a small sequential task, implement in the current app workspace using $implement-task. For parallel code writers, use separate Desktop **Worktree chats**, one per task, based on the same approved base commit. Give the owner the ready-to-paste prompts in `docs/builder-prompts.md`. Do not substitute shared-workspace subagents for parallel builders. Create new user-owned chats only when explicitly authorized.
 
@@ -34,4 +36,6 @@ Delegate a fresh native `reviewer` over the combined candidate using $review-tas
 
 Maintain `docs/development-state.md` using its template: phase, source, unresolved questions, approval evidence, task ownership/dependencies, builder locations, integration candidate, verification, review, and next owner action. Only the coordinator updates shared state. A task JSON passed to the optional CLI is still operator-approved input, not an approval signature.
 
-No hooks are required. CLI benchmarks and unattended runs are optional workflows documented separately. Report Desktop observations separately from headless CLI results, including missing GUI verification and inherited-context limits.
+No hooks are required. Report interactive versus managed execution separately from host-specific observations. Managed timeouts and attempt limits apply only while the controller owns the run. Use docs/design-checklist.md for applicable edge cases, contracts, acceptance and reproduction-first repairs.
+
+For accepted tasks, generate and inspect a companion acceptance record with `npm run harness -- prepare TASK`, then `preflight TASK --acceptance RECORD`. Use task-aware verify/review in either mode. Use `runs` and `handoff RUN_ID` for durable context; read docs/solo-workflow.md. Keep manual observations outside the working tree.

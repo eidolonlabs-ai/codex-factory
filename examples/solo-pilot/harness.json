@@ -1,0 +1,1 @@
+{"schema_version":2,"checks":[{"name":"unit","argv":["node","acceptance/unit.mjs"]},{"name":"integration","argv":["node","acceptance/integration.mjs"],"timeout_seconds":30}],"limits":{"attempts":3,"agent_seconds":180,"run_seconds":600},"policy":{"editable_paths":["src"],"protected_paths":["acceptance"]}}

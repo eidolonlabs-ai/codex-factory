@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "id": "example-task",
+  "title": "Replace this example with an approved task",
+  "specification": "This is a task format example. Replace it with a concrete approved specification before running.",
+  "acceptance_criteria": ["Replace this placeholder with independently checkable application behavior"],
+  "allowed_paths": ["src"],
+  "base_ref": "HEAD"
+}

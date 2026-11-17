@@ -33,3 +33,10 @@ No hooks are installed. Both Desktop coordination and the shared verifier work i
 ## Acceptance status
 
 See [the acceptance record](desktop-acceptance.md) for actual Desktop-native observations, role-loading caveats, and unverified UI steps. Worktree UI instructions are based on [OpenAI's guide](https://learn.chatgpt.com/docs/environments/git-worktrees), not a claim that we clicked those controls on this machine.
+
+## Shared solo workflow
+
+The [execution-mode contract](execution-modes.md) applies equally to Desktop
+and CLI. Interactive is the default; explicitly requested managed work may
+launch the controller from Desktop as a separate process. Earlier UI examples
+show interactive work, not a host limitation. Sequential builders are the default.
