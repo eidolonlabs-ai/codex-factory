@@ -1,0 +1,1 @@
+{"schema_version":1,"checks":[{"name":"demo-fixture","argv":["python3","examples/demo/check.py"],"timeout_seconds":10}]}

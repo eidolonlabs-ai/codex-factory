@@ -1,0 +1,4 @@
+# Project-local defaults; Codex requires trust before loading project config.
+# Models and authentication remain account-level choices.
+sandbox_mode = "workspace-write"
+approval_policy = "on-request"

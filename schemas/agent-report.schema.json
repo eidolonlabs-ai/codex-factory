@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {
+      "type": "string"
+    },
+    "completed": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "summary",
+    "completed"
+  ],
+  "additionalProperties": false
+}

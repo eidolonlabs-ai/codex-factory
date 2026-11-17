@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "run_id",
+    "status"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "status": {
+      "enum": [
+        "created",
+        "running",
+        "verifying",
+        "repairing",
+        "reviewing",
+        "ready_for_human_review",
+        "failed",
+        "timed_out",
+        "interrupted",
+        "needs_clarification",
+        "ready_for_planning"
+      ]
+    }
+  }
+}
