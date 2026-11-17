@@ -1,5 +1,9 @@
 # Codex solo developer harness
 
+[![Harness verification](https://github.com/theRealMarkCastillo/codex-harness-template/actions/workflows/verify.yml/badge.svg)](https://github.com/theRealMarkCastillo/codex-harness-template/actions/workflows/verify.yml)
+
+[Use this template](https://github.com/theRealMarkCastillo/codex-harness-template/generate) to create your own repository.
+
 An example Codex-specific repository template for moving from an ambiguous project intake to an approved task, bounded implementation, independent checks, and human review. Designed for one developer now, with task/result formats that a future queue can reuse.
 
 The template is application-stack independent. It includes a small Python controller, Codex instructions and skills, offline tests, and the deliberately incomplete ChronoGraph intake benchmark. It does not include a built ChronoGraph application.

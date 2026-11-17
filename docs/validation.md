@@ -26,4 +26,4 @@ Installed CLI: 0.169.0. Help confirmed exec/review and required output/sandbox f
 
 ## Limits
 
-Linux/Python 3.11 are configured in CI but were not run locally; GitHub CI has not run because the repository is not published. SIGINT cleanup, power-loss recovery, adversarial detached process/session escape, and hostile-worker isolation are not exhaustively validated. Local hashes/logs are not signed attestations. No ChronoGraph application, live databases, or browser UI was built or verified. No cross-tool benchmark superiority claim is made.
+GitHub CI passed all four combinations of Ubuntu/macOS and Python 3.11/3.12, running all 33 tests plus the demo verifier. [Initial public CI run](https://github.com/theRealMarkCastillo/codex-harness-template/actions/runs/44010310656). Linux was validated by CI rather than locally. SIGINT cleanup, power-loss recovery, adversarial detached process/session escape, and hostile-worker isolation are not exhaustively validated. Local hashes/logs are not signed attestations. No ChronoGraph application, live databases, or browser UI was built or verified. No cross-tool benchmark superiority claim is made.
