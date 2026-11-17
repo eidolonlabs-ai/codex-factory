@@ -20,3 +20,7 @@ The standalone `.codex/agents/architect.toml` and `reviewer.toml` files use name
 ## TypeScript runtime
 
 Node.js 22+ is required. Dependencies are pinned in package-lock.json. Source execution uses tsx; `npm run build` emits a runnable JavaScript CLI. TypeScript strict checking covers application and test code; skipLibCheck skips external declaration-file internals because the saxes declarations contain unconstrained generic parameters. DOCX extraction is exercised against the original preserved benchmark text.
+
+## Native Windows
+
+The shared verifier and unattended runner currently reject native Windows because subprocess cleanup uses POSIX process groups. A real Windows VM baseline passed compilation but failed runtime verification: [native Windows results](windows-baseline.md). WSL is a separate Linux execution environment and was not tested in that baseline.

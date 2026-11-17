@@ -31,3 +31,7 @@ The earlier headless intake returned 7 questions, 6 blocking, in 46.33 seconds. 
 The enclosing tool sandbox can deny process-group signals or nested Codex initialization. Authorized host execution was used where needed while the child Codex retained its sandbox; no dangerous bypass flags were used. Process cleanup tests do not prove containment of malicious processes that deliberately detach into new sessions. Power-loss recovery, hostile-worker isolation, and production deployment remain outside these checks.
 
 No ChronoGraph application, live databases, or browser UI was built or verified. No cross-tool benchmark superiority claim is made. Local hashes/logs are not signed attestations.
+
+## Native Windows VM baseline
+
+At commit `2252bb7`, a native Windows VM with Node.js 22.23.5 passed dependency installation, type checking, formatting, and compilation. The test suite had 18 passes and 20 failures; demo verification failed at the explicit Windows platform guard. Native Windows runtime support is not established. See the [Windows baseline](windows-baseline.md) for environment, failure categories, and evidence limits. No WSL was used.
