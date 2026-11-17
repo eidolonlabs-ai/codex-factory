@@ -4,7 +4,7 @@ description: Use when coordinating a project in Codex Desktop from intake throug
 ---
 # Coordinate development in Desktop
 
-Stay in the app. The default workflow never starts `codex exec` or `python3 -m harness run`. The shared `python3 -m harness verify` command runs checks only; it does not launch an agent/controller loop.
+Stay in the app. The default workflow never starts `codex exec` or `npm run harness -- run`. The shared `npm run harness -- verify` command runs checks only; it does not launch an agent/controller loop.
 
 ## Intake and decisions
 

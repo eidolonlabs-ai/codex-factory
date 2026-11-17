@@ -1,5 +1,7 @@
 # Desktop acceptance record
 
+Historical native Desktop exercise from the original implementation. The later TypeScript port changed shared command spellings below; the native app exercise has not been repeated for that port.
+
 Date: 2026-11-16 (America/Los_Angeles). Test surface: this active Codex Desktop chat and its native subagents. App build number was not captured. CLI 0.169.0 is recorded separately and is not an app-build identifier.
 
 ## Observed in the native Desktop chat workflow

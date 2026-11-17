@@ -1,1 +1,13 @@
-{"schema_version":1,"checks":[{"name":"demo-fixture","argv":["python3","examples/demo/check.py"],"timeout_seconds":10}]}
+{
+  "schema_version": 1,
+  "checks": [
+    {
+      "name": "demo-fixture",
+      "argv": [
+        "node",
+        "examples/demo/check.mjs"
+      ],
+      "timeout_seconds": 10
+    }
+  ]
+}

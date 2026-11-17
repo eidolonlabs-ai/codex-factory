@@ -1,6 +1,6 @@
 # Default Desktop development workflow
 
-Open the template as a project in Codex Desktop. Start a new chat and invoke `$coordinate-development`. Attach the intake. The coordinator delegates focused intake analysis, returns questions, records your decisions, and seeks approval for a resolved specification before implementation. Use the original ChronoGraph DOCX unchanged for the benchmark.
+Open the template as a project in Codex Desktop and run `npm ci` in its terminal. Start a new chat and invoke `$coordinate-development`. Attach the intake. The coordinator delegates focused intake analysis, returns questions, records your decisions, and seeks approval for a resolved specification before implementation. Use the original ChronoGraph DOCX unchanged for the benchmark.
 
 ## Roles and permissions
 
@@ -12,7 +12,7 @@ Skills are shared: architect-intake, implement-task, verify-task, review-task. T
 
 After spec approval, fill a shared task JSON and companion task card for each slice. Pin the same base commit, file ownership, acceptance criteria, dependencies, and upstream contract version. Choose independent tasks for parallel execution; serialize overlapping changes.
 
-Start a new chat in the project, select **Worktree** below the composer, choose the approved base branch, and submit its [builder prompt](builder-prompts.md). Confirm the new checkout's base SHA. Repeat for the next independent task. An app-created worktree can initially be detached; preserve its results using the app's branch controls when needed.
+Start a new chat in the project, select **Worktree** below the composer, choose the approved base branch, and submit its [builder prompt](builder-prompts.md). Confirm the new checkout's base SHA and run `npm ci` in that worktree before using the shared verifier. Repeat for the next independent task. An app-created worktree can initially be detached; preserve its results using the app's branch controls when needed.
 
 Inspect builder diffs and handoff evidence in the app. Do not direct multiple shared-workspace subagents to write parallel features. Do not start a CLI-managed worktree inside an app-managed Worktree chat.
 
@@ -20,7 +20,7 @@ Inspect builder diffs and handoff evidence in the app. Do not direct multiple sh
 
 Collect the reviewed builder changes in a dedicated integration Worktree from the approved base. Apply commits/patches in dependency order; resolve conflicts against the approved spec. This does not authorize merging the final target branch.
 
-Run `python3 -m harness verify` from the integration checkout. It executes the checks in harness.json only; it does not launch Codex. Configure application tests and required browser/live checks before treating a task as accepted. Individual builder checks are insufficient for integration.
+Run `npm run harness -- verify` from the integration checkout. It executes the checks in harness.json only; it does not launch Codex. Configure application tests and required browser/live checks before treating a task as accepted. Individual builder checks are insufficient for integration.
 
 Delegate a fresh reviewer over the approved spec, task ownership/dependencies, complete combined diff, and verification evidence. Bring findings back to the main chat. Fix material issues and rerun checks. The owner sees evidence and limitations before the merge decision.
 

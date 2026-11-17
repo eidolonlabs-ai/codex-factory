@@ -16,3 +16,7 @@ On macOS an enclosing agent sandbox may prevent a nested Codex process from open
 ## Desktop roles
 
 The standalone `.codex/agents/architect.toml` and `reviewer.toml` files use name, description and developer_instructions. They omit model overrides and sandbox overrides. Supported capability flags reduce apps/plugins/memory access when the role is actually loaded. Native roles inherit parent permissions; read-only instructions alone are not a separate sandbox. [OpenAI subagent reference](https://learn.chatgpt.com/docs/agent-configuration/subagents). Automatic role discovery on this installed app has not yet been observed; explicit role-instruction fallback tests are labeled as such.
+
+## TypeScript runtime
+
+Node.js 22+ is required. Dependencies are pinned in package-lock.json. Source execution uses tsx; `npm run build` emits a runnable JavaScript CLI. TypeScript strict checking covers application and test code; skipLibCheck skips external declaration-file internals because the saxes declarations contain unconstrained generic parameters. DOCX extraction is exercised against the original preserved benchmark text.

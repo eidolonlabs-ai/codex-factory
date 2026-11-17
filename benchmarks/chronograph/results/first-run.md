@@ -1,4 +1,4 @@
-# Headless CLI ChronoGraph intake result
+# Historical Python CLI ChronoGraph intake result
 
 Date: 2026-11-16 (America/Los_Angeles). Mode: headless `codex exec`, CLI 0.169.0, configured default model (not independently pinned for this comparison). Run `[local run identifier omitted]` completed in 46.33 seconds.
 

@@ -1,29 +1,33 @@
 # Validation report
 
-Date: 2026-11-16 (America/Los_Angeles).
+## Current TypeScript implementation
 
-## Local deterministic evidence
+Local checks on Node.js 22.22.3/macOS:
 
-- Python 3.12 on macOS: `python3 -m unittest discover -s tests -v` passed 33 tests after review fixes.
-- `python3 -m harness verify --config examples/demo/harness.json` passed the labeled demo check.
-- Empty root project verification remains a failure, by design.
-- Fresh local clone walkthrough passed: all 33 tests, demo verification, and expected exit 1 for unconfigured project verification.
-- Real temporary Git repositories and real subprocesses exercise isolation/locks, linked worktrees, dirty/unborn repositories, scope detection, committed+dirty review coverage, candidate mutation, bounded repairs, malformed reports, timeout cleanup, successful-parent descendant cleanup, literal argv handling, atomic evidence replacement, and missing-tool failures.
-- Native review found two real defects; both had observed failing regression tests before fixes and a passing full suite afterward.
+- `npm test`: 38 passing tests.
+- `npm run typecheck`: passed with strict application/test type checking.
+- `npm run format:check`: passed.
+- `npm run build`: passed.
+- `node dist/harness/cli.js verify --config examples/demo/harness.json`: passed.
+- Unconfigured project verification fails deliberately.
+- The original ChronoGraph DOCX extracts to exactly the preserved text; UTF-16 XML fixtures also pass.
 
-## Desktop evidence
+Real temporary repositories/processes cover worktree isolation and locks, linked worktrees, dirty/unborn repositories, scope checks, complete review snapshots, candidate drift, retry budgets, malformed reports, missing tools, timeout cleanup, descendants, SIGINT during agent execution and between subprocesses, and atomic evidence replacement. [Migration and review details](typescript-migration.md).
 
-See [Desktop acceptance](desktop-acceptance.md). Native coordinator/architect/reviewer behavior was exercised in this app chat. Automatic role discovery and GUI Worktree flow remain pending by user request. No hooks are installed.
+A real TypeScript CLI smoke task completed an implementation, independent check, and separate review. A new ChronoGraph CLI intake returned needs_clarification with 12 questions. Those calls ran before the final review fixes; the final changes have targeted regressions and the full passing suite. Live calls used the account's configured model, so they are not controlled cross-model comparisons. Private session metadata is not published.
 
-## Headless CLI evidence
+The Node.js CI matrix targets Ubuntu/macOS with Node 22/24. Its execution status is reported on the pull request and workflow page; local test results do not claim CI success.
 
-Installed CLI: 0.169.0. Help confirmed exec/review and required output/sandbox flags.
+## Earlier Python and Desktop evidence
 
-- ChronoGraph intake: needs_clarification, 7 questions, 6 blocking, 46.33 seconds. [Report](../benchmarks/chronograph/results/first-run.md).
-- A disposable, separate one-file task changed `src/message.txt` from pending to exactly `verified\n`. The controller independently checked the file and collected a separate real `codex review`. Terminal status: ready_for_human_review. One implementation attempt; total 30.42 seconds; builder 13.91 seconds; review 16.10 seconds. The original smoke checkout stayed unchanged. Run ID: `[local run identifier omitted]`. Full local evidence remains in the scratch smoke repository, not shipped in the template.
-- These live invocations used the existing account's default model/settings. They do not prove model-independent behavior or eliminate inherited-context contamination.
-- The enclosing agent sandbox initially prevented Codex initialization. Authorized host execution was used for the successful live tests; child Codex still requested read-only/workspace-write sandboxing and never-ask approvals. No dangerous bypass flags were used.
+The original Python implementation passed 33 tests and its initial cross-platform CI. [Historical CI run](https://github.com/theRealMarkCastillo/codex-harness-template/actions/runs/44010310656). Those results are historical and are not evidence for the TypeScript implementation.
+
+The earlier headless intake returned 7 questions, 6 blocking, in 46.33 seconds. [Historical report](../benchmarks/chronograph/results/first-run.md). A separate earlier one-file implementation/review smoke passed in 30.42 seconds.
+
+[Desktop acceptance](desktop-acceptance.md) records native coordinator/architect/reviewer behavior. Automatic role discovery and the GUI Worktree walkthrough remain pending by user request. No hooks are installed.
 
 ## Limits
 
-GitHub CI passed all four combinations of Ubuntu/macOS and Python 3.11/3.12, running all 33 tests plus the demo verifier. [Initial public CI run](https://github.com/theRealMarkCastillo/codex-harness-template/actions/runs/44010310656). Linux was validated by CI rather than locally. SIGINT cleanup, power-loss recovery, adversarial detached process/session escape, and hostile-worker isolation are not exhaustively validated. Local hashes/logs are not signed attestations. No ChronoGraph application, live databases, or browser UI was built or verified. No cross-tool benchmark superiority claim is made.
+The enclosing tool sandbox can deny process-group signals or nested Codex initialization. Authorized host execution was used where needed while the child Codex retained its sandbox; no dangerous bypass flags were used. Process cleanup tests do not prove containment of malicious processes that deliberately detach into new sessions. Power-loss recovery, hostile-worker isolation, and production deployment remain outside these checks.
+
+No ChronoGraph application, live databases, or browser UI was built or verified. No cross-tool benchmark superiority claim is made. Local hashes/logs are not signed attestations.

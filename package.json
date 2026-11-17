@@ -1,0 +1,29 @@
+{
+  "name": "codex-harness-template",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Desktop-first Codex harness template and optional unattended runner",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "harness": "node --import tsx harness/cli.ts",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "verify:demo": "node --import tsx harness/cli.ts verify --config examples/demo/harness.json",
+    "format:check": "prettier --check \"harness/**/*.ts\" \"tests/**/*.ts\""
+  },
+  "dependencies": {
+    "fflate": "0.8.3",
+    "saxes": "6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "prettier": "3.10.1",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2"
+  }
+}

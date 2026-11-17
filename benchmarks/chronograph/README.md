@@ -7,7 +7,7 @@ For the default Desktop workflow, see [Desktop acceptance](../../docs/desktop-ac
 For a headless CLI benchmark, run from the template root:
 
 ```sh
-python3 -m harness benchmark --timeout 1200
+npm run harness -- benchmark --timeout 1200
 ```
 
 The command starts a fresh read-only architect session in a new workspace containing only extracted intake text. It does not build ChronoGraph, launch Docker, execute the destructive seed/reset script, or send the evaluator rubric to the architect. No hardcoded list of expected deficiencies appears in the generic architect prompt.

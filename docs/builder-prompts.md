@@ -23,7 +23,7 @@ Read docs/specs/approved.md, tasks/task-a.json, and docs/tasks/task-a.md.
 Use the base commit, acceptance criteria, owned paths, and dependencies recorded there.
 Confirm the checkout base before editing. Modify only your assigned files.
 If a dependency or contract is unresolved, report it to the coordinator and stop.
-Implement here in the app; do not launch codex exec or the Python task runner.
+Implement here in the app; do not launch codex exec or the TypeScript task runner.
 Run targeted checks and the configured shared verifier. Return your full diff,
 base/HEAD, changed files, check results, and remaining gaps. Do not merge or publish.
 ```

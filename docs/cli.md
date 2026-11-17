@@ -1,19 +1,23 @@
 # CLI operation
 
-Run all commands from the template or an adopted repository root so Python can import `harness`. `--repo PATH` selects another Git repository for operations; task/config/source arguments are resolved relative to the process current directory.
+Run `npm ci` in the template or adopted repository root first. Run the commands from that root so npm can load the TypeScript harness. `--repo PATH` selects another Git repository for operations; task/config/source arguments are resolved relative to the process current directory.
 
-- `python3 -m harness doctor`: checks tools, platform, clean Git state and configured checks. Does not test authentication.
-- `python3 -m harness intake SOURCE [--model MODEL] [--timeout SECONDS]`: read-only questions report.
-- `python3 -m harness benchmark [--model MODEL] [--timeout SECONDS]`: intake using the preserved ChronoGraph document.
-- `python3 -m harness run TASK [--config CONFIG]`: bounded builder, checks, then review.
-- `python3 -m harness verify [--config CONFIG]`: checks the current candidate, including uncommitted changes.
-- `python3 -m harness status RUN_ID`: reads a managed implementation/intake record.
+- `npm run harness -- doctor`: checks tools, platform, clean Git state and configured checks. Does not test authentication.
+- `npm run harness -- intake SOURCE [--model MODEL] [--timeout SECONDS]`: read-only questions report.
+- `npm run harness -- benchmark [--model MODEL] [--timeout SECONDS]`: intake using the preserved ChronoGraph document.
+- `npm run harness -- run TASK [--config CONFIG]`: bounded builder, checks, then review.
+- `npm run harness -- verify [--config CONFIG]`: checks the current candidate, including uncommitted changes.
+- `npm run harness -- status RUN_ID`: reads a managed implementation/intake record.
 
 Exit codes: 0 successful command/report collection; 1 unsuccessful run or checks; 2 invalid input or setup. An intake requiring clarification returns 0 because clarification is its intended output. Benchmark scoring is separate.
 
 Task IDs are lowercase letters, digits and hyphens, 1–48 characters. Scopes are normalized repository-relative file/directory prefixes; no globbing, absolute paths, `.` or `..`. A prefix `src` includes `src/api.py` but not `src-other`. Limits must be positive integers. JSON runtime validation rejects unknown fields.
 
 Commands execute without shell expansion. To run a deliberate sequence, create a reviewed project script and invoke it explicitly; do not place `&&` or pipes into an argv field expecting shell behavior.
+
+For a compiled entry point, run `npm run build`, then `node dist/harness/cli.js --help`. npm scripts run the source through tsx; compiled execution only needs the runtime dependencies. Node.js 22+ is required. Windows uses WSL; native Windows process-group supervision is not supported.
+
+The JSON contracts remain version 1. Candidate hashes are local fingerprints, not cross-language signatures; rerun verification after the migration rather than reusing old evidence. Non-UTF-8 Git paths now fail closed instead of being decoded lossily. DOCX inputs are limited to 64 MiB and document XML to 16 MiB; DOCTYPE is rejected.
 
 ## Failures and recovery
 

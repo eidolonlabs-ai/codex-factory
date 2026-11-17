@@ -6,7 +6,7 @@
 
 An example Codex-specific repository template for moving from an ambiguous project intake to an approved task, bounded implementation, independent checks, and human review. Designed for one developer now, with task/result formats that a future queue can reuse.
 
-The template is application-stack independent. It includes a small Python controller, Codex instructions and skills, offline tests, and the deliberately incomplete ChronoGraph intake benchmark. It does not include a built ChronoGraph application.
+The template is application-stack independent. It includes a small TypeScript controller, Codex instructions and skills, offline tests, and the deliberately incomplete ChronoGraph intake benchmark. It does not include a built ChronoGraph application.
 
 ## Start in Codex Desktop
 
@@ -17,7 +17,7 @@ The template is application-stack independent. It includes a small Python contro
 5. Inspect each builder's diff in the app. The coordinator combines their reviewed changes in an integration worktree and runs the same project checks used everywhere:
 
    ```sh
-   python3 -m harness verify
+   npm run harness -- verify
    ```
 
    This is a local verifier, **not** `codex exec` or the CLI task controller. Configure real checks in `harness.json` first; an empty check list deliberately fails.
@@ -35,11 +35,13 @@ A separate evaluator scores what it caught and missed after the report is return
 
 ## Shared checks and adoption
 
-Requirements for the local verifier and tests: Python 3.11+, Git, macOS or Linux (including WSL). Day-to-day Desktop work does not require starting a CLI agent. No extra Python packages or model credentials are needed for offline harness checks.
+Requirements: Node.js 22+, npm, Git, and macOS or Linux (including WSL). Run `npm ci` once in each checkout/worktree before using the verifier. Day-to-day Desktop work does not require starting a CLI agent. Offline checks need no model credentials.
 
 ```sh
-python3 -m unittest discover -s tests -v
-python3 -m harness verify --config examples/demo/harness.json
+npm ci
+npm run typecheck
+npm test
+npm run verify:demo
 ```
 
 The demo verifies only its labeled fixture. For application work, add real checks to `harness.json`, reconcile AGENTS.md with your application, and write task JSON plus Desktop task cards. [Adoption guide](docs/adoption.md).
@@ -49,11 +51,11 @@ The demo verifies only its labeled fixture. For application work, add real check
 Keep the CLI runner for repeatable benchmarks, automation, and unattended tasks. These require an installed, authenticated Codex CLI:
 
 ```sh
-python3 -m harness benchmark
-python3 -m harness intake /absolute/path/to/spec.docx
-python3 -m harness doctor
-python3 -m harness run tasks/my-task.json
-python3 -m harness status RUN_ID
+npm run harness -- benchmark
+npm run harness -- intake /absolute/path/to/spec.docx
+npm run harness -- doctor
+npm run harness -- run tasks/my-task.json
+npm run harness -- status RUN_ID
 ```
 
 The task runner assumes its operator approved the specification. It creates its own worktree, invokes Codex, runs checks independently, and collects a separate review. Default budgets are 3 total implementation attempts, 20 minutes per agent invocation, 10 minutes per check, and 90 minutes per run. These limits do not apply automatically to Desktop chats.

@@ -4,7 +4,7 @@ description: Use when implementing an approved task in a Codex Desktop workspace
 ---
 # Implement an approved task
 
-**Desktop is the default.** Read the approved spec and task card/JSON. Confirm base commit, acceptance criteria, file ownership, dependencies and required checks. Implement directly in this chat's workspace. Do not start `codex exec` or `python3 -m harness run` unless the user explicitly selected scripted execution.
+**Desktop is the default.** Read the approved spec and task card/JSON. Confirm base commit, acceptance criteria, file ownership, dependencies and required checks. Implement directly in this chat's workspace. Do not start `codex exec` or `npm run harness -- run` unless the user explicitly selected scripted execution.
 
 Parallel builders run in separate Desktop Worktree chats, not shared-workspace subagents. Use native subagents only for focused read-only analysis. Stay within owned files. If a dependency is missing, a shared contract must change, or an owner decision is unresolved, report the blocker to the coordinator rather than guessing or editing another builder's files.
 
@@ -12,4 +12,4 @@ Run the task's targeted checks and invoke $verify-task. Do not weaken acceptance
 
 Return the task ID, base/HEAD, complete changed-file list, diff or commit, checks with results, and gaps. Do not merge or publish. The coordinator integrates builders and verifies the combined candidate before review.
 
-Only for explicitly selected unattended execution: use `python3 -m harness doctor`, then `python3 -m harness run tasks/TASK.json`. The CLI enforces its own budgets and protected paths; it may stop for protected test/control edits even where a Desktop task allows them.
+Only for explicitly selected unattended execution: use `npm run harness -- doctor`, then `npm run harness -- run tasks/TASK.json`. The CLI enforces its own budgets and protected paths; it may stop for protected test/control edits even where a Desktop task allows them.
