@@ -36,3 +36,10 @@ Keep shared state and approved specs in the project. Run verification with
 Report checks still needing live services or browser validation. CLI `doctor`
 is for managed-run preflight; its Codex authentication/setup expectations do
 not prevent using Desktop skills or the verifier alone.
+
+New adoption uses v3 configuration. Require Docker, a reachable daemon and Docker
+Compose; configure reviewed build definitions, service healthchecks and a real
+E2E test service. See ../../references/entry-paths.md for all four entry routes.
+Review and trust the plugin's native hooks through the host UI; installing the
+plugin does not trust them. Do not change global sandbox/approval defaults.
+Activate an approved task only after configuration and acceptance are ready.

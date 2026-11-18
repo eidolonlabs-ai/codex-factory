@@ -49,6 +49,7 @@ export async function runProcess(
   seconds: number,
   log_dir: string,
   stdin = "",
+  envOverrides: Record<string, string> = {},
 ): Promise<ProcessResult> {
   if (process.platform === "win32")
     throw new Error("Use WSL: POSIX process groups are required");
@@ -66,6 +67,7 @@ export async function runProcess(
   let force: NodeJS.Timeout | undefined;
   const child = spawn(argv[0]!, argv.slice(1), {
     cwd,
+    env: { ...process.env, ...envOverrides },
     detached: true,
     stdio: [input, out, err],
     shell: false,

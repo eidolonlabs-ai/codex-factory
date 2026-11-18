@@ -35,6 +35,9 @@ for (const file of walk(join(root, "plugin-src")))
     readFileSync(file, "utf8"),
   );
 const manifest = JSON.parse(files.get("plugin.json"));
+// Codex currently skips lifecycle hooks for portable AgentPlugin manifests.
+// Ship only the native manifest; retain portable metadata as canonical input.
+files.delete("plugin.json");
 const presentation = manifest.extensions["com.openai"].interface;
 if (
   manifest.name !== "codex-harness" ||
@@ -49,6 +52,7 @@ files.set(
     version: manifest.version,
     description: manifest.description,
     skills: "./skills/",
+    hooks: manifest.extensions["com.openai"].hooks,
     interface: presentation,
   }),
 );
@@ -74,6 +78,9 @@ for (const name of readdirSync(join(root, ".agents/skills")).sort()) {
     '\n\nResolve <PLUGIN_ROOT> from this installed skill path (two directories above).\nRun commands with the target project as the working directory, or supply\n`--repo "<PROJECT_ROOT>"`; source/task/config arguments resolve from the caller\nworking directory. Use absolute paths when working elsewhere. Never assume the\nproject contains this plugin’s npm scripts or edit the plugin installation.\nUse installed skill names as exposed by the host, including namespaces.\nIf not adopted, use this plugin’s setup-project skill first.\nRead `../../references/plugin.md` for runtime requirements and role fallback.\n';
   text = text.slice(0, end) + note + text.slice(end);
   text = text
+    .replaceAll("docs/hooks.md", "../../references/hooks.md")
+    .replaceAll("docs/entry-paths.md", "../../references/entry-paths.md")
+    .replaceAll("docs/orchestration.md", "../../references/orchestration.md")
     .replaceAll("docs/solo-workflow.md", "../../references/solo-workflow.md")
     .replaceAll(
       "docs/design-checklist.md",
@@ -104,7 +111,7 @@ for (const name of readdirSync(join(root, ".agents/skills")).sort()) {
 }
 for (const name of ["desktop-task", "development-state"])
   files.set(`templates/${name}.md`, adapt(read(`docs/templates/${name}.md`)));
-files.set("templates/harness.json", read("harness.json"));
+files.set("templates/harness.json", read("plugin-src/templates/harness.json"));
 files.set("templates/example-task.json", read("tasks/example.json"));
 for (const name of ["acceptance-record", "config", "task", "result"])
   files.set(`schemas/${name}.schema.json`, read(`schemas/${name}.schema.json`));
@@ -122,6 +129,9 @@ for (const name of [
   "execution-modes",
   "solo-policy",
   "solo-workflow",
+  "entry-paths",
+  "hooks",
+  "orchestration",
 ])
   files.set(`references/${name}.md`, adapt(read(`docs/${name}.md`)));
 files.set("LICENSE", read("LICENSE"));
@@ -152,6 +162,19 @@ const bundled = await build({
   },
 });
 files.set("runtime/cli.mjs", bundled.outputFiles[0].text);
+const hookBundle = await build({
+  absWorkingDir: root,
+  entryPoints: ["harness/hook-entry.ts"],
+  bundle: true,
+  platform: "node",
+  target: "node22",
+  format: "esm",
+  write: false,
+  banner: {
+    js: 'import { createRequire as __createRequire } from "node:module"; const require = __createRequire(import.meta.url);',
+  },
+});
+files.set("runtime/hooks.mjs", hookBundle.outputFiles[0].text);
 const names = [...files.keys()].filter((p) =>
   /^skills\/[^/]+\/SKILL.md$/.test(p),
 );

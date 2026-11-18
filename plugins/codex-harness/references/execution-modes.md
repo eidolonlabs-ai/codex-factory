@@ -1,5 +1,10 @@
 # Solo execution modes
 
+For the current v3 hook-driven Docker Compose workflow, start with
+[entry paths](entry-paths.md), [hooks](hooks.md) and [orchestration](orchestration.md).
+Legacy v1/v2 examples below remain compatible but do not provide the v3 acceptance contract.
+
+
 Desktop and CLI use one task/acceptance workflow. Interactive sessions in either
 interface follow skills; managed execution adds the external controller's
 process deadlines, attempt budget, independent checks and separate review.

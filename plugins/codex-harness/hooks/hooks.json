@@ -1,0 +1,1 @@
+{"hooks":{"SessionStart":[{"hooks":[{"type":"command","command":"node \"$PLUGIN_ROOT/scripts/hooks.mjs\"","timeout":10}]}],"PreToolUse":[{"matcher":"Bash|apply_patch|Edit|Write","hooks":[{"type":"command","command":"node \"$PLUGIN_ROOT/scripts/hooks.mjs\"","timeout":10}]}],"Stop":[{"hooks":[{"type":"command","command":"node \"$PLUGIN_ROOT/scripts/hooks.mjs\"","timeout":1600}]}]}}

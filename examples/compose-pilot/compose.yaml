@@ -1,0 +1,17 @@
+services:
+  api:
+    build: .
+    environment:
+      PORT: "3000"
+      HOST: "0.0.0.0"
+      PILOT_DATA: /tmp/notes.json
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/notes').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+  e2e:
+    build:
+      context: .
+      dockerfile: acceptance/Dockerfile
+    profiles: [test]

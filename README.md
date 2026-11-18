@@ -18,6 +18,18 @@ copying this template's npm setup. See [plugin installation and adoption](docs/p
 [design coverage assessment](docs/design-coverage.md). Public-directory
 submission remains a later release step.
 
+## Start a local task (0.3 workflow)
+
+Follow [entry paths](docs/entry-paths.md) for new projects, existing repositories,
+bug fixes, and feature changes. Docker and Docker Compose are required for
+full-stack acceptance. The plugin bundles [native hooks](docs/hooks.md) and a
+[local task-graph orchestrator](docs/orchestration.md). Review/trust hooks in the
+host, configure v3 acceptance, and activate the approved task. Installation alone
+is not hook activation. Read-only planning can proceed before stack setup.
+
+The walkthrough below describes the original template path; the linked v3 guides
+are authoritative for the hook-driven plugin workflow.
+
 ## Start in Codex Desktop
 
 1. Open this repository as a project in **Codex Desktop**. Inspect its instructions and trust the project only if you approve them. Start a new chat so newly added skills and project agents can be discovered.
@@ -33,7 +45,7 @@ submission remains a later release step.
    This is a local verifier, **not** `codex exec` or the CLI task controller. Configure real checks in `harness.json` first; an empty check list deliberately fails.
 6. Ask for a fresh native reviewer of the **integrated** candidate. Review findings and missing live/browser checks come back to the main chat before you decide whether to merge.
 
-Native subagents handle focused analysis/review; parallel code-writing workers use separate Desktop Worktree chats. The architect and reviewer role files are under `.codex/agents/`. They instruct read-only behavior but inherit parent permissions: choose read-only permissions on the parent for an enforced read-only phase. No hook is installed or required.
+Native subagents handle focused analysis/review; parallel code-writing workers use separate Desktop Worktree chats. The architect and reviewer role files are under `.codex/agents/`. They instruct read-only behavior but inherit parent permissions: choose read-only permissions on the parent for an enforced read-only phase. The template does not install hooks globally; the plugin bundles hooks that require host trust.
 
 See the [Desktop walkthrough](docs/desktop.md), [coordinator skill](.agents/skills/coordinate-development/SKILL.md), and [Desktop acceptance record](docs/desktop-acceptance.md). The acceptance record distinguishes observed native Desktop chat behavior from app UI steps that still require manual verification.
 

@@ -9,7 +9,7 @@ Authenticated Codex CLI is required only for agent-driven intake/managed runs.
 
 ## Installation from GitHub
 
-After the plugin files are committed and published to this repository:
+Register the GitHub marketplace and install the committed plugin:
 
 ```sh
 codex plugin marketplace add theRealMarkCastillo/codex-harness-template
@@ -24,8 +24,35 @@ name displayed by the host. Installation alone does not adopt a project.
 
 Git marketplace sources and portable packaging are described in the
 [OpenAI packaging guide](https://developers.openai.com/plugins/build/plugins).
-The compatibility manifest supports hosts using `.codex-plugin/plugin.json`.
-No MCP server, hook, account upload, or hosted service is needed.
+The installed package uses `.codex-plugin/plugin.json` exclusively. Codex CLI
+0.169.0 skips hook loading when it selects a portable root manifest, even when
+that manifest declares hooks. Portable metadata remains canonical build input,
+but root `plugin.json` is deliberately excluded from the shipped package.
+No MCP server, account upload, or hosted service is needed. The plugin bundles native hooks; review and trust their current definitions in the host before claiming enforcement. See [hook setup](hooks.md).
+
+## Updating an installed plugin
+
+For a GitHub marketplace installation:
+
+```sh
+codex plugin marketplace upgrade codex-harness
+codex plugin add codex-harness@codex-harness
+```
+
+For a local-checkout installation (the current development setup), build the
+updated checkout and reinstall it:
+
+```sh
+cd /Users/markcastillo/git/codex-harness-template
+npm run plugin:build
+codex plugin add codex-harness@codex-harness
+```
+
+`marketplace upgrade` refreshes Git sources; it is not needed for a local path.
+Use `codex plugin list --json` to inspect the installed version and source.
+Start a fresh Codex session and review/trust changed hooks through `/hooks` or
+the Desktop hook interface. Reinstallation does not migrate existing project
+configuration or activate a task. Never modify the installed cache by hand.
 
 ## Project adoption
 
@@ -47,7 +74,7 @@ run it while another process is not rewriting the destination directories.
 It does not modify AGENTS.md, package files, .codex settings, CI, or global
 configuration. Reconcile the suggested AGENTS snippet and existing instructions
 as an explicit project edit. Configure actual acceptance checks: the generated
-empty list deliberately fails verification. Commit adopted files before a
+configuration requires a real Compose stack and E2E service. Commit adopted files before a
 managed CLI run; that runner requires a clean base.
 
 Checks execute in the project as trusted host commands. Source, task and
@@ -58,7 +85,7 @@ plugin cache. Project state and decisions belong in the project as well.
 
 ## Workflow and limitations
 
-Use the [solo task workflow](solo-workflow.md) and [execution modes](execution-modes.md) from either Desktop or CLI.
+Use [entry paths](entry-paths.md), [hook activation](hooks.md), [orchestration](orchestration.md), and the [solo task workflow](solo-workflow.md) and [execution modes](execution-modes.md) from either Desktop or CLI.
 
 Use coordinate-development for intake, approved tasks, implementation,
 integration, verification and review. Parallel builders use separate Desktop
@@ -70,7 +97,7 @@ discover plugin skills. Existing project roles may disable plugins. Never
 claim a separate role sandbox; permissions are inherited.
 
 Only explicitly requested controller-managed runs enforce controller budgets. Interactive
-skills in either interface are instructions. Version 1 preserves conservative protected paths. Version 2 explicitly adopts
+skills in either interface are instructions. Version 1 preserves conservative protected paths. Versions 2 and 3 explicitly adopt
 editable application/unit-test paths and trusted acceptance protections; see
 [protection policy](solo-policy.md). Manifest/lock/control changes remain reviewed
 interactive work. No sealed holdouts,
@@ -99,8 +126,8 @@ no build step. Tests exercise the shipped bundle in a separate Git repository.
 The private/source-distribution ZIP is written under `dist/` without a catalog,
 node_modules, benchmark sources, or unrelated repository files.
 
-Increment `plugin-src/plugin.json` version for a release and regenerate both
-manifests. Refresh the marketplace and reinstall/update using the host's
+Increment `plugin-src/plugin.json` version for a release and regenerate the native
+package. Refresh the marketplace and reinstall/update using the host's
 supported flow; never edit an installed cache. Project scaffolds are not
 automatically overwritten on upgrade. Review changes and migrate project
 configuration deliberately. Teams can pin a Git ref with marketplace `--ref`.
@@ -114,3 +141,13 @@ Local automated package tests do not establish Desktop discovery, a live
 Codex agent run, native Windows support, or application browser/service
 acceptance. See the repository's plugin validation and design coverage reports
 for evidence and remaining gaps.
+
+## Version 0.3 requirements
+
+New adoption requires Docker and Docker Compose via schema version 3. The plugin
+bundles SessionStart, PreToolUse and Stop handlers. V1/v2 remain compatible for
+existing calls but do not satisfy the new full-stack/hook adoption contract.
+Local-script hooks require host trust. The current OpenAI packaging guide excludes
+plugins containing lifecycle hooks from the public plugin directory; a future
+listing depends on that policy changing or a separately scoped package.
+Git/local marketplace installation is the supported distribution route to test.

@@ -1,5 +1,11 @@
 # Design coverage assessment
 
+The initial assessment below is historical. Owner corrections require native
+hooks, local multi-agent orchestration and Docker Compose acceptance. See
+[harness design correction](harness-design-correction.md), [hooks](hooks.md),
+[orchestration](orchestration.md), and [entry paths](entry-paths.md). The earlier
+deferral of interactive hooks is superseded.
+
 Reviewed 2026-11-17 against the plugin candidate and existing harness. The
 owner's intended product is a reusable custom harness/plugin for a solo
 developer or small team, with a possible later role in a software factory.

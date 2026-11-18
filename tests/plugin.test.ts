@@ -39,13 +39,16 @@ test("plugin manifests, resource links and generated files stay synchronized", (
   );
   assert.equal(result.status, 0, result.stderr);
   const portable = JSON.parse(
-    readFileSync(join(source, "plugin.json"), "utf8"),
+    readFileSync(resolve("plugin-src/plugin.json"), "utf8"),
   );
   const compat = JSON.parse(
     readFileSync(join(source, ".codex-plugin/plugin.json"), "utf8"),
   );
   assert.equal(portable.name, compat.name);
+  assert.equal(existsSync(join(source, "plugin.json")), false);
   assert.equal(portable.version, compat.version);
+  assert.equal(portable.extensions["com.openai"].hooks, "./hooks/hooks.json");
+  assert.equal(compat.hooks, portable.extensions["com.openai"].hooks);
   assert.equal(
     portable.$schema,
     "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
@@ -188,11 +191,11 @@ test("archive contains a complete standalone plugin without repository extras", 
     readFileSync(resolve(`dist/codex-harness-${manifest.version}.zip`)),
   );
   assert.equal(
-    JSON.parse(strFromU8(archive["plugin.json"]!)).name,
+    JSON.parse(strFromU8(archive[".codex-plugin/plugin.json"]!)).name,
     "codex-harness",
   );
   assert.equal(
-    JSON.parse(strFromU8(archive["plugin.json"]!)).version,
+    JSON.parse(strFromU8(archive[".codex-plugin/plugin.json"]!)).version,
     manifest.version,
   );
   for (const key of Object.keys(archive)) {
@@ -209,4 +212,32 @@ test("archive contains a complete standalone plugin without repository extras", 
   assert.equal(help.status, 0, help.stderr);
   assert.match(help.stdout, /verify/);
   assert.ok(archive["THIRD_PARTY_NOTICES.md"]);
+  const hooks = JSON.parse(strFromU8(archive["hooks/hooks.json"]!));
+  assert.deepEqual(Object.keys(hooks.hooks).sort(), [
+    "PreToolUse",
+    "SessionStart",
+    "Stop",
+  ]);
+  const project = repo(t);
+  writeFileSync(
+    join(project.path, "harness.json"),
+    JSON.stringify({ schema_version: 1, checks: [] }),
+  );
+  const hook = spawnSync(process.execPath, [join(root, "scripts/hooks.mjs")], {
+    cwd: project.path,
+    encoding: "utf8",
+    timeout: 15000,
+    input: JSON.stringify({
+      hook_event_name: "PreToolUse",
+      cwd: project.path,
+      tool_name: "Bash",
+      tool_input: { command: "git commit --no-verify -m bypass" },
+    }),
+    env: { ...process.env, NODE_PATH: "", NODE_OPTIONS: "" },
+  });
+  assert.equal(hook.status, 0, hook.stderr);
+  assert.equal(
+    JSON.parse(hook.stdout).hookSpecificOutput.permissionDecision,
+    "deny",
+  );
 });

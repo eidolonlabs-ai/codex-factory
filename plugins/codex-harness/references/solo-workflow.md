@@ -1,5 +1,10 @@
 # Solo task workflow
 
+For the current v3 hook-driven Docker Compose workflow, start with
+[entry paths](entry-paths.md), [hooks](hooks.md) and [orchestration](orchestration.md).
+Legacy v1/v2 examples below remain compatible but do not provide the v3 acceptance contract.
+
+
 Desktop and CLI share interactive and managed modes. Use one sequential builder
 unless independent parallel tasks justify more worktrees. The CLI examples below
 use the installed plugin's scripts/harness.mjs with Node; the template equivalent

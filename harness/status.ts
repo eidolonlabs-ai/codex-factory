@@ -23,7 +23,13 @@ export interface RunSummary {
 export function locateRun(repo: string, runId: string): string {
   if (!/^[a-f0-9]{32}$/.test(runId)) throw new Error("Invalid run ID");
   const home = storage(repo);
-  for (const kind of ["runs", "intake-runs", "verification"]) {
+  for (const kind of [
+    "runs",
+    "intake-runs",
+    "verification",
+    "orchestrations",
+    "orchestrations",
+  ]) {
     const parent = join(home, kind),
       dir = join(parent, runId);
     if (existsSync(dir)) {
@@ -138,7 +144,13 @@ export function readRunSummary(repo: string, runId: string): RunSummary {
 export function listRuns(repo: string): RunSummary[] {
   const home = storage(repo);
   const ids: string[] = [];
-  for (const kind of ["runs", "intake-runs", "verification"]) {
+  for (const kind of [
+    "runs",
+    "intake-runs",
+    "verification",
+    "orchestrations",
+    "orchestrations",
+  ]) {
     const p = join(home, kind);
     if (!existsSync(p) || lstatSync(p).isSymbolicLink()) continue;
     ids.push(

@@ -7,6 +7,7 @@ export interface Disposition {
   note: string;
 }
 export interface ReviewPacket {
+  worker_reviews?: unknown[];
   schema_version: 1;
   task: Task;
   acceptance?: AcceptanceRecord;

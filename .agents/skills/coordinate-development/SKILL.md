@@ -16,7 +16,7 @@ Once resolved, summarize the proposed spec and obtain approval. Reuse approval a
 
 ## Builders
 
-Use one builder and sequential tasks by default. Parallel worktrees are optional for independent work.
+Use one builder for small tasks and dependency-aware parallel worktrees for independent tasks. Local multi-agent orchestration is a core workflow: use `orchestrate PLAN` for bounded managed workers, or explicitly authorized Desktop Worktree chats. See docs/orchestration.md.
 
 For a small sequential task, implement in the current app workspace using $implement-task. For parallel code writers, use separate Desktop **Worktree chats**, one per task, based on the same approved base commit. Give the owner the ready-to-paste prompts in `docs/builder-prompts.md`. Do not substitute shared-workspace subagents for parallel builders. Create new user-owned chats only when explicitly authorized.
 
@@ -36,6 +36,6 @@ Delegate a fresh native `reviewer` over the combined candidate using $review-tas
 
 Maintain `docs/development-state.md` using its template: phase, source, unresolved questions, approval evidence, task ownership/dependencies, builder locations, integration candidate, verification, review, and next owner action. Only the coordinator updates shared state. A task JSON passed to the optional CLI is still operator-approved input, not an approval signature.
 
-No hooks are required. Report interactive versus managed execution separately from host-specific observations. Managed timeouts and attempt limits apply only while the controller owns the run. Use docs/design-checklist.md for applicable edge cases, contracts, acceptance and reproduction-first repairs.
+Native plugin hooks are required for interactive enforcement in adopted projects. Review/trust the installed definitions, configure v3 Docker Compose acceptance, and activate the approved task. See docs/hooks.md and docs/entry-paths.md. Report interactive versus managed execution separately from host-specific observations. Managed timeouts apply while the controller owns the run; interactive Stop gates persist their own failed-attempt budget. Use docs/design-checklist.md for applicable edge cases, contracts, acceptance and reproduction-first repairs.
 
 For accepted tasks, generate and inspect a companion acceptance record with `npm run harness -- prepare TASK`, then `preflight TASK --acceptance RECORD`. Use task-aware verify/review in either mode. Use `runs` and `handoff RUN_ID` for durable context; read docs/solo-workflow.md. Keep manual observations outside the working tree.

@@ -1,12 +1,13 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "codex-harness",
-  "version": "0.2.1",
-  "description": "A Desktop-first development workflow with explicit project setup, independent verification, and an optional bounded CLI runner.",
+  "version": "0.3.0",
+  "description": "Codex local development with native hook gates, Docker Compose acceptance, and dependency-aware worktree orchestration.",
   "repository": "https://github.com/theRealMarkCastillo/codex-harness-template",
   "license": "MIT",
   "extensions": {
     "com.openai": {
+      "hooks": "./hooks/hooks.json",
       "interface": {
         "displayName": "Codex Harness",
         "shortDescription": "Develop with verified tasks",

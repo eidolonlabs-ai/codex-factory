@@ -10,7 +10,8 @@
     "schema_version": {
       "enum": [
         1,
-        2
+        2,
+        3
       ]
     },
     "checks": {
@@ -99,6 +100,41 @@
           }
         }
       }
+    },
+    "compose": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "files",
+        "services",
+        "test_service"
+      ],
+      "properties": {
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "services": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]*$"
+          }
+        },
+        "test_service": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]*$"
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
     }
   },
   "allOf": [
@@ -106,7 +142,10 @@
       "if": {
         "properties": {
           "schema_version": {
-            "const": 2
+            "enum": [
+              2,
+              3
+            ]
           }
         }
       },
@@ -119,6 +158,27 @@
         "not": {
           "required": [
             "policy"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "schema_version": {
+            "const": 3
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "compose"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "compose"
           ]
         }
       }

@@ -1,5 +1,10 @@
 # Default Desktop development workflow
 
+For the current v3 hook-driven Docker Compose workflow, start with
+[entry paths](entry-paths.md), [hooks](hooks.md) and [orchestration](orchestration.md).
+Legacy v1/v2 examples below remain compatible but do not provide the v3 acceptance contract.
+
+
 Open the template as a project in Codex Desktop and run `npm ci` in its terminal. Start a new chat and invoke `$coordinate-development`. Attach the intake. The coordinator delegates focused intake analysis, returns questions, records your decisions, and seeks approval for a resolved specification before implementation. Use the original ChronoGraph DOCX unchanged for the benchmark.
 
 ## Roles and permissions

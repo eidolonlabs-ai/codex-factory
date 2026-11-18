@@ -110,7 +110,8 @@ export function assessReadiness(
   const blockers: string[] = [];
   if (record.task_sha256 !== taskDigest(task))
     blockers.push("Task/specification changed since acceptance mapping");
-  if (!config.checks.length) blockers.push("No project checks configured");
+  if (!config.checks.length && !config.compose)
+    blockers.push("No project checks configured");
   if (record.unresolved_decisions.length)
     blockers.push(
       ...record.unresolved_decisions.map((s) => `Unresolved decision: ${s}`),
@@ -126,7 +127,10 @@ export function assessReadiness(
     if (!task.acceptance_criteria.includes(c.criterion))
       blockers.push(`Unknown criterion: ${c.id}`);
     for (const name of c.checks)
-      if (!config.checks.some((check) => check.name === name))
+      if (
+        !(name === "compose:e2e" && config.compose) &&
+        !config.checks.some((check) => check.name === name)
+      )
         blockers.push(`Unknown check: ${name}`);
   }
   return {

@@ -49,6 +49,9 @@ export function resolvePolicy(config: Config): ProtectionPolicy {
           "plugins",
           "scripts/harness",
           ...config.policy!.protected_paths,
+          ...(config.compose?.files ?? []),
+          "Dockerfile",
+          ".dockerignore",
         ],
       };
 }

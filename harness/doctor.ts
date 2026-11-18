@@ -40,10 +40,20 @@ export function doctor(
     result.errors.push(`Git repository: ${String(e)}`);
   }
   try {
-    if (!loadConfig(join(repo, "harness.json")).checks.length)
+    const config = loadConfig(join(repo, "harness.json"));
+    if (!config.checks.length && !config.compose)
       result.errors.push("Project verification checks are not configured");
+    if (config.compose)
+      for (const args of [
+        ["compose", "version"],
+        ["info", "--format", "{{.ServerVersion}}"],
+      ])
+        execFileSync("docker", args, {
+          timeout: 10000,
+          stdio: ["ignore", "pipe", "pipe"],
+        });
   } catch (e) {
-    result.errors.push(`Project configuration: ${String(e)}`);
+    result.errors.push(`Project configuration/Docker: ${String(e)}`);
   }
   if (mode === "managed")
     try {

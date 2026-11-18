@@ -1,26 +1,25 @@
 # Development state
 
-- Phase: implemented local solo release candidate; owner review pending.
-- Approval: owner approved execution with “go”, selected a disposable pilot,
-  and explicitly approved local marketplace registration/plugin installation.
-- Branch: `codex/solo-developer-workflow`; base
-  `1175ec00f3e5f5b9358e98ea77a9d01e458d7ebf`. Existing packaging preserved.
-- Ownership: coordinator implemented sequentially; native subagents performed
-  focused read-only policy and integrated reviews.
-- Sources: all five supplied design files; see `docs/design-coverage.md`.
-- Decisions: one solo builder by default; shared host-independent workflow;
-  explicit opt-in v2 policy; fixed acceptance/config/package protections; manual
-  observations outside the working tree; owner disposition separate from review.
-- Implementation: acceptance preparation/preflight, shared review packets,
-  candidate/config/policy identities, status/handoff and interruption handling.
-- Verification: 61 tests passed; typecheck, formatting, build, labeled demo,
-  generated plugin freshness and archive checks passed. Live installed pilot
-  and remaining host checks are recorded in `docs/solo-acceptance.md`.
-- Review: policy protections strengthened; missing reviewer output and
-  interruption-state defects fixed and regression-tested. Focused re-review
-  confirmed fixes; no owner acceptance inferred from the reviewer.
-- Installation: local marketplace registered; plugin 0.2.1 installed. Model,
-  sandbox and approval defaults unchanged.
-- Next action: owner reviews this candidate. Fresh Desktop UI discovery,
-  published GitHub install, remote CI/Linux/WSL and public directory submission
-  remain outstanding. No commit, push, merge, deploy or publication performed.
+Phase: local implementation and approved installed CLI native-hook acceptance verified.
+Baseline: c4bcd9f on main. Current changes are uncommitted.
+Scope and acceptance: docs/remaining-implementation-task.md. Source reconciliation:
+docs/harness-design-correction.md. Owner selected adopted-project-only guards and
+required Docker/Compose full-stack acceptance. Direct main delivery is permitted
+when requested; PR workflow is not required.
+
+Implemented candidate: v3 Compose gate, native hook bundle and interactive task
+activation, persistent repair budgets, dependency graph orchestration with separate
+local worktrees and integrated verification/review, four onboarding entry paths.
+Legacy v1/v2 remain compatible; new adoption uses v3.
+
+Validation: 81 regression tests, typecheck/format/build/package checks, real
+disposable Compose pass/fail/repair, real two-worker integration and independent
+reviews passed. See docs/hooks-acceptance.md. Plugin 0.3.0 is installed. Native
+SessionStart and tool denials passed after correcting manifest selection; native
+Stop repair/review acceptance passed with no code/scope findings and owner
+disposition pending. Desktop UI trust remains unverified.
+Do not confuse host-only 0.2 acceptance with the new requirements.
+
+Limits: hooks are host-dependent guards, not an OS security boundary. This local
+mode protects acceptance controls but does not seal them from host-side builders.
+No automatic main merge, global permission change or Docker-wide cleanup.

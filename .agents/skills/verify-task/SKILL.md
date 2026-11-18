@@ -11,3 +11,5 @@ pending even if all automated checks passed. Persist observations outside the
 working tree to avoid altering the candidate with its own digest; see
 `docs/solo-workflow.md`. Never invent observed evidence or weaken acceptance.
 Report exact commands, results, candidate identity and live/browser gaps.
+
+New application adoption requires v3 Docker Compose verification with real services and browser E2E. Legacy checks are compatibility only. Inspect startup, health, test and cleanup evidence; unavailable Docker fails acceptance. See docs/entry-paths.md.

@@ -1,0 +1,29 @@
+{
+  "schema_version": 3,
+  "checks": [],
+  "policy": {
+    "editable_paths": [
+      "src"
+    ],
+    "protected_paths": [
+      "acceptance",
+      "Dockerfile",
+      "compose.yaml"
+    ]
+  },
+  "compose": {
+    "files": [
+      "compose.yaml"
+    ],
+    "services": [
+      "api"
+    ],
+    "test_service": "e2e",
+    "timeout_seconds": 600
+  },
+  "limits": {
+    "attempts": 3,
+    "agent_seconds": 180,
+    "run_seconds": 1200
+  }
+}

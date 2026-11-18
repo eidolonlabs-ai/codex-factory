@@ -1,3 +1,5 @@
+import { managedContext } from "./hooks.js";
+import { verifyProject } from "./compose.js";
 import {
   assessReadiness,
   configDigest,
@@ -89,14 +91,14 @@ export async function runTask(
   inputAcceptance?: AcceptanceRecord,
 ): Promise<RunResult> {
   const config = structuredClone(inputConfig); // Freeze the invocation's command list against caller/worker edits.
-  if (!config.checks.length)
+  if (!config.checks.length && !config.compose)
     throw new Error(
       "Configure project checks before running an implementation task",
     );
   const acceptance = inputAcceptance
     ? structuredClone(inputAcceptance)
     : undefined;
-  if (config.schema_version === 2 && !acceptance)
+  if (config.schema_version !== 1 && !acceptance)
     throw new Error("Version 2 managed runs require an acceptance record");
   if (acceptance) {
     const readiness = assessReadiness(task, config, acceptance);
@@ -119,6 +121,7 @@ export async function runTask(
     interrupts.dispose();
     throw e;
   }
+  let clearManaged: ReturnType<typeof managedContext> | undefined;
   const result: RunResult = {
     schema_version: 1,
     run_id: id,
@@ -142,6 +145,7 @@ export async function runTask(
     writeResult(w.run_dir, result);
   };
   try {
+    clearManaged = managedContext(w.path, task, config);
     await interrupts.checkpoint();
     for (const [name, value] of [
       ["task", task],
@@ -196,6 +200,7 @@ export async function runTask(
         ),
         log,
         prompt,
+        { CODEX_HARNESS_WORKER_TOKEN: clearManaged!.token },
       );
       const entry: Attempt = { number: attempt, process: p };
       result.attempts.push(entry);
@@ -239,7 +244,7 @@ export async function runTask(
         return result;
       }
       save("verifying");
-      const v = await verify(w, config.checks, deadline);
+      const v = await verifyProject(w, config, deadline);
       await interrupts.checkpoint();
       entry.verification = v;
       if (v.passed) {
@@ -304,6 +309,7 @@ export async function runTask(
     );
   } finally {
     interrupts.dispose();
+    clearManaged?.();
     releaseWorkspace(w);
   }
   return result;

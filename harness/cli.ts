@@ -1,3 +1,6 @@
+import { orchestrate, parsePlan } from "./orchestrate.js";
+import { activate, deactivate, hookStatus } from "./hooks.js";
+import { verifyProject } from "./compose.js";
 import { parseArgs } from "node:util";
 import { resolve, join } from "node:path";
 import { readFileSync } from "node:fs";
@@ -52,12 +55,16 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
     });
     if (values.help) {
       console.log(
-        "Codex harness: doctor | prepare TASK | preflight TASK | intake SOURCE | benchmark | run TASK | verify | review | status RUN_ID | runs | handoff RUN_ID | disposition RUN_ID\nOptions: --repo PATH; --config PATH; --task PATH (verify/review); --acceptance PATH (preflight/run/verify/review); --mode verify|managed (doctor); --file PATH (disposition); --timeout SECONDS --model MODEL (intake/benchmark)",
+        "Codex harness: orchestrate PLAN | activate TASK --acceptance RECORD | deactivate | hooks-status | doctor | prepare TASK | preflight TASK | intake SOURCE | benchmark | run TASK | verify | review | status RUN_ID | runs | handoff RUN_ID | disposition RUN_ID\nOptions: --repo PATH; --config PATH; --task PATH (verify/review); --acceptance PATH (preflight/run/verify/review); --mode verify|managed (doctor); --file PATH (disposition); --timeout SECONDS --model MODEL (intake/benchmark)",
       );
       return 0;
     }
     const [command, arg] = positionals;
     const valid = [
+      "orchestrate",
+      "activate",
+      "deactivate",
+      "hooks-status",
       "doctor",
       "prepare",
       "preflight",
@@ -74,6 +81,8 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
     if (!command || !valid.includes(command))
       throw new Error("Choose " + valid.join(", "));
     const needsArg = [
+      "orchestrate",
+      "activate",
       "prepare",
       "preflight",
       "intake",
@@ -85,9 +94,17 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
     if (positionals.length !== (needsArg ? 2 : 1))
       throw new Error("Wrong number of command arguments");
     for (const [option, commands] of Object.entries({
-      config: ["prepare", "preflight", "run", "verify", "review"],
+      config: [
+        "orchestrate",
+        "activate",
+        "prepare",
+        "preflight",
+        "run",
+        "verify",
+        "review",
+      ],
       task: ["verify", "review"],
-      acceptance: ["preflight", "run", "verify", "review"],
+      acceptance: ["activate", "preflight", "run", "verify", "review"],
       timeout: ["intake", "benchmark"],
       model: ["intake", "benchmark"],
       mode: ["doctor"],
@@ -97,7 +114,31 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
         throw new Error("Option is not supported for this command");
     const repo = resolve(values.repo ?? ".");
     let result: unknown, success: boolean;
-    if (command === "doctor") {
+    if (command === "orchestrate") {
+      result = await orchestrate(
+        repo,
+        parsePlan(JSON.parse(readFileSync(resolve(arg!), "utf8"))),
+        loadConfig(resolve(values.config ?? join(repo, "harness.json"))),
+      );
+      success =
+        (result as { status: string }).status === "ready_for_human_review";
+    } else if (command === "activate") {
+      if (!values.acceptance)
+        throw new Error("Activation requires --acceptance PATH");
+      result = activate(
+        repo,
+        loadTask(resolve(arg!)),
+        loadConfig(resolve(values.config ?? join(repo, "harness.json"))),
+        loadAcceptance(resolve(values.acceptance)),
+      );
+      success = true;
+    } else if (command === "deactivate") {
+      result = deactivate(repo);
+      success = true;
+    } else if (command === "hooks-status") {
+      result = hookStatus(repo);
+      success = true;
+    } else if (command === "doctor") {
       if (values.mode && !["verify", "managed"].includes(values.mode))
         throw new Error("Invalid doctor mode");
       const r = doctor(
@@ -180,7 +221,7 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
       if (acceptance && !task) throw new Error("Acceptance requires a task");
       if (
         (command === "preflight" ||
-          (command === "run" && config.schema_version === 2)) &&
+          (command === "run" && config.schema_version !== 1)) &&
         !acceptance
       )
         throw new Error("Provide --acceptance PATH");
@@ -212,8 +253,14 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
           criteria: task!.acceptance_criteria.map((criterion, i) => ({
             id: `criterion-${i + 1}`,
             criterion,
-            checks: config.checks.map((c) => c.name),
-            manual: config.checks.length ? [] : ["Define acceptance evidence"],
+            checks: [
+              ...config.checks.map((c) => c.name),
+              ...(config.compose ? ["compose:e2e"] : []),
+            ],
+            manual:
+              config.checks.length || config.compose
+                ? []
+                : ["Define acceptance evidence"],
           })),
           manual_evidence: [],
         };
@@ -228,7 +275,7 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
       } else {
         if (command === "review" && !task)
           throw new Error("review requires --task PATH");
-        if (task && config.schema_version === 2 && !acceptance)
+        if (task && config.schema_version !== 1 && !acceptance)
           throw new Error(
             "Version 2 task verification requires --acceptance PATH",
           );
@@ -272,7 +319,7 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
                 checks: [],
                 candidate: snapshotCandidate(w),
               }
-            : await verify(w, config.checks, deadline);
+            : await verifyProject(w, config, deadline);
         } catch (e) {
           writeResult(runDir, {
             ...initialRecord,

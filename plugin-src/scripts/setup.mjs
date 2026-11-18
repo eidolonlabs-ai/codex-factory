@@ -85,7 +85,7 @@ try {
     "Makefile",
   ].filter((name) => existsSync(join(root, name)));
   const version = JSON.parse(
-    readFileSync(join(plugin, "plugin.json"), "utf8"),
+    readFileSync(join(plugin, ".codex-plugin/plugin.json"), "utf8"),
   ).version;
   // Validate every destination before any writes; never follow existing symlinks.
   const plan = Object.entries(files).map(([path, source]) => ({
@@ -117,7 +117,7 @@ try {
         upgrade:
           "Existing scaffolds remain project-owned; review and migrate explicitly.",
         files: plan.map(({ path, action }) => ({ path, action })),
-        next: "Configure real checks in harness.json; reconcile the AGENTS snippet. Empty checks fail.",
+        next: "Configure required Docker Compose services and E2E in v3 harness.json; reconcile the AGENTS snippet and trust the plugin hooks. Missing stack checks fail.",
       },
       null,
       2,

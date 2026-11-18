@@ -1,5 +1,10 @@
 # CLI operation
 
+For the current v3 hook-driven Docker Compose workflow, start with
+[entry paths](entry-paths.md), [hooks](hooks.md) and [orchestration](orchestration.md).
+Legacy v1/v2 examples below remain compatible but do not provide the v3 acceptance contract.
+
+
 Run `npm ci` in the template or adopted repository root first. Run the commands from that root so npm can load the TypeScript harness. `--repo PATH` selects another Git repository for operations; task/config/source arguments are resolved relative to the process current directory.
 
 - `npm run harness -- doctor`: checks tools, platform, clean Git state and configured checks. Does not test authentication.
