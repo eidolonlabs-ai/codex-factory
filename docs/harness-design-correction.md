@@ -1,5 +1,7 @@
 # Design correction: hooks are core to the solo harness
 
+This is the design record from before the 0.3 implementation. See [coverage](design-coverage.md) and [0.3 acceptance](hooks-acceptance.md) for the resulting behavior.
+
 Owner direction, 2026-11-17: the supplied **AI Software Factories & Harness
 Engineering Guide.docx** and **AI Software Factories & Harness Engineering
 Workshop.pptx** define the intended design. Solo scope does not remove hooks.

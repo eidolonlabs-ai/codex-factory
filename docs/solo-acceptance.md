@@ -1,5 +1,7 @@
 # Solo release acceptance — 2026-11-17
 
+Historical 0.2.1 pilot. See [0.3 acceptance](hooks-acceptance.md) for current hook and Compose evidence.
+
 Local release candidate: plugin **0.2.1**, macOS arm64, Node 22.22.3,
 Codex CLI 0.169.0. Branch `codex/solo-developer-workflow`, base
 `1175ec00f3e5f5b9358e98ea77a9d01e458d7ebf`; changes remain uncommitted.

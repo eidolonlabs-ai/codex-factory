@@ -1,6 +1,8 @@
-# Validation report
+# Runtime migration validation
 
-## Current TypeScript implementation
+This report records the original TypeScript migration baseline. See [0.3 acceptance](hooks-acceptance.md) for current workflow evidence.
+
+## Initial TypeScript implementation
 
 Local checks on Node.js 22.22.3/macOS:
 
@@ -16,15 +18,15 @@ Real temporary repositories/processes cover worktree isolation and locks, linked
 
 A real TypeScript CLI smoke task completed an implementation, independent check, and separate review. A new ChronoGraph CLI intake returned needs_clarification with 12 questions. Those calls ran before the final review fixes; the final changes have targeted regressions and the full passing suite. Live calls used the account's configured model, so they are not controlled cross-model comparisons. Private session metadata is not published.
 
-The Node.js CI matrix targets Ubuntu/macOS with Node 22/24. Its execution status is reported on the pull request and workflow page; local test results do not claim CI success.
+The Node.js CI matrix targets Ubuntu/macOS with Node 22/24. See the [workflow runs](https://github.com/theRealMarkCastillo/codex-harness/actions/workflows/verify.yml) for CI results.
 
 ## Earlier Python and Desktop evidence
 
-The original Python implementation passed 33 tests and its initial cross-platform CI. [Historical CI run](https://github.com/theRealMarkCastillo/codex-harness-template/actions/runs/44010310656). Those results are historical and are not evidence for the TypeScript implementation.
+The original Python implementation passed 33 tests and its initial cross-platform CI. [Historical CI run](https://github.com/theRealMarkCastillo/codex-harness/actions/runs/44010310656). Those results are historical and are not evidence for the TypeScript implementation.
 
 The earlier headless intake returned 7 questions, 6 blocking, in 46.33 seconds. [Historical report](../benchmarks/chronograph/results/first-run.md). A separate earlier one-file implementation/review smoke passed in 30.42 seconds.
 
-[Desktop acceptance](desktop-acceptance.md) records native coordinator/architect/reviewer behavior. Automatic role discovery and the GUI Worktree walkthrough remain pending by user request. No hooks are installed.
+[Desktop acceptance](desktop-acceptance.md) records native coordinator/architect/reviewer behavior. Automatic role discovery and the GUI Worktree walkthrough remain pending by user request. That exercise predated the hook bundle.
 
 ## Limits
 

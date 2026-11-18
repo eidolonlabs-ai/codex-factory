@@ -9,7 +9,7 @@ Native sources consulted:
 - [OpenAI configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference): supported sandbox and approval settings.
 - [OpenAI customization](https://learn.chatgpt.com/docs/customization/overview): repo-local `.agents/skills`.
 
-Local live checks and limitations are recorded in validation.md. Global user instructions, skills, memory, plugins, and configured model settings can affect live results; v1 does not claim a clean-room benchmark or reset them. No global settings are modified.
+See [0.3 acceptance](hooks-acceptance.md) for native CLI dispatch and Compose/browser checks, and [migration validation](validation.md) for earlier results. The package uses the [native manifest](hooks.md#codex-01690-package-compatibility) required by CLI 0.169.0. Global user instructions, skills, memory, plugins, and configured model settings can affect live results; v1 does not claim a clean-room benchmark or reset them. No global settings are modified.
 
 On macOS an enclosing agent sandbox may prevent a nested Codex process from opening its session database or initializing the app server. Run the harness from an ordinary authorized terminal if that happens; do not add a sandbox-bypass flag to the child agent.
 

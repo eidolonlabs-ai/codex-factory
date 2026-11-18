@@ -1,4 +1,4 @@
-# Codex harness template
+# Codex Harness
 
 This repository implements a Codex-specific solo developer workflow. Codex Desktop is the default; begin with $coordinate-development. CLI orchestration is optional for benchmarks/unattended runs.
 

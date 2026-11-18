@@ -3,7 +3,7 @@
   "name": "codex-harness",
   "version": "0.3.0",
   "description": "Codex local development with native hook gates, Docker Compose acceptance, and dependency-aware worktree orchestration.",
-  "repository": "https://github.com/theRealMarkCastillo/codex-harness-template",
+  "repository": "https://github.com/theRealMarkCastillo/codex-harness",
   "license": "MIT",
   "extensions": {
     "com.openai": {

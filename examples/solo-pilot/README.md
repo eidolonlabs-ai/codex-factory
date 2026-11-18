@@ -1,4 +1,6 @@
-# Disposable solo acceptance pilot
+# Legacy host-check acceptance pilot
+
+This fixture exercises the v2 workflow. Use the [Compose pilot](../compose-pilot/README.md) to try v3 acceptance.
 
 This fixture deliberately starts with a whitespace-normalization bug. Copy this
 folder to a disposable Git repository and commit a base before running the task.

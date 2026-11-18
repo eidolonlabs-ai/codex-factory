@@ -1,106 +1,39 @@
-# Codex solo developer harness
+# Codex Harness
 
-[![Harness verification](https://github.com/theRealMarkCastillo/codex-harness-template/actions/workflows/verify.yml/badge.svg)](https://github.com/theRealMarkCastillo/codex-harness-template/actions/workflows/verify.yml)
+[![Harness verification](https://github.com/theRealMarkCastillo/codex-harness/actions/workflows/verify.yml/badge.svg)](https://github.com/theRealMarkCastillo/codex-harness/actions/workflows/verify.yml)
 
-[Use this template](https://github.com/theRealMarkCastillo/codex-harness-template/generate) to create your own repository.
+A local development workflow for solo developers and small teams using Codex Desktop or CLI. Define the task and its acceptance criteria, implement within agreed paths, then verify the candidate with Docker Compose and collect an independent review before deciding what to ship.
 
-An example Codex-specific repository template for moving from an ambiguous project intake to an approved task, bounded implementation, independent checks, and human review. Designed for one developer now, with task/result formats that a future queue can reuse.
+## Get started
 
-The template is application-stack independent. It includes a small TypeScript controller, Codex instructions and skills, offline tests, and the deliberately incomplete ChronoGraph intake benchmark. It does not include a built ChronoGraph application.
+- **Add the plugin to Codex.** Install from the GitHub marketplace and review the bundled hooks. [Install, update, and adopt](docs/plugin.md)
+- **Use the repository template.** Clone [Codex Harness](https://github.com/theRealMarkCastillo/codex-harness) or copy it into a new repository and configure your application checks. [Template setup](docs/adoption.md)
+- **Start work.** Pick the path for a new project, existing repo, bug fix, or feature. [Task entry points](docs/entry-paths.md)
 
-## Use as a plugin
+Application acceptance uses Node.js 22+, Git, and a running Docker engine with Docker Compose. The harness runs on macOS and Linux, including WSL. See the tested configurations and limits in [Compatibility](docs/compatibility.md).
 
-The same workflow is also packaged under `plugins/codex-harness`, with a GitHub
-marketplace catalog, six skills, templates, explicit project setup, and a
-standalone Node runtime. It can be adopted in an existing project without
-copying this template's npm setup. See [plugin installation and adoption](docs/plugin.md),
-[validation evidence](docs/plugin-validation.md), and the
-[design coverage assessment](docs/design-coverage.md). Public-directory
-submission remains a later release step.
+## Choose how to run the task
 
-## Start a local task (0.3 workflow)
+| Mode | When to use it | Guide |
+| --- | --- | --- |
+| Interactive | Work with Codex in Desktop or CLI. Activate the task so trusted hooks guard covered edits and run the completion gate. | [Desktop](docs/desktop.md) · [Hooks](docs/hooks.md) |
+| Managed task | Run an approved task unattended with bounded attempts, a separate worktree, and a review snapshot. | [CLI](docs/cli.md) |
+| Managed task graph | Run independent tasks in parallel, integrate changes in dependency order, and verify the combined candidate. | [Orchestration](docs/orchestration.md) |
 
-Follow [entry paths](docs/entry-paths.md) for new projects, existing repositories,
-bug fixes, and feature changes. Docker and Docker Compose are required for
-full-stack acceptance. The plugin bundles [native hooks](docs/hooks.md) and a
-[local task-graph orchestrator](docs/orchestration.md). Review/trust hooks in the
-host, configure v3 acceptance, and activate the approved task. Installation alone
-is not hook activation. Read-only planning can proceed before stack setup.
+All three modes use the same task and acceptance formats. The owner decides whether to commit and push directly or use a PR. [Task evidence and handoff](docs/solo-workflow.md)
 
-The walkthrough below describes the original template path; the linked v3 guides
-are authoritative for the hook-driven plugin workflow.
-
-## Start in Codex Desktop
-
-1. Open this repository as a project in **Codex Desktop**. Inspect its instructions and trust the project only if you approve them. Start a new chat so newly added skills and project agents can be discovered.
-2. Invoke **`$coordinate-development`**, attach the original project intake, and say you want the Desktop workflow. The coordinator uses a native architect subagent for focused analysis and returns its questions to you. No CLI controller is launched.
-3. Answer consequential questions and approve the resolved specification. The original ChronoGraph benchmark deliberately remains unchanged; record answers separately.
-4. Have the coordinator create task cards with acceptance criteria, file ownership, dependencies, and a pinned base commit. For independent builders, start separate app chats, select **Worktree** under the composer, choose the base branch, and paste the [builder prompts](docs/builder-prompts.md).
-5. Inspect each builder's diff in the app. The coordinator combines their reviewed changes in an integration worktree and runs the same project checks used everywhere:
-
-   ```sh
-   npm run harness -- verify
-   ```
-
-   This is a local verifier, **not** `codex exec` or the CLI task controller. Configure real checks in `harness.json` first; an empty check list deliberately fails.
-6. Ask for a fresh native reviewer of the **integrated** candidate. Review findings and missing live/browser checks come back to the main chat before you decide whether to merge.
-
-Native subagents handle focused analysis/review; parallel code-writing workers use separate Desktop Worktree chats. The architect and reviewer role files are under `.codex/agents/`. They instruct read-only behavior but inherit parent permissions: choose read-only permissions on the parent for an enforced read-only phase. The template does not install hooks globally; the plugin bundles hooks that require host trust.
-
-See the [Desktop walkthrough](docs/desktop.md), [coordinator skill](.agents/skills/coordinate-development/SKILL.md), and [Desktop acceptance record](docs/desktop-acceptance.md). The acceptance record distinguishes observed native Desktop chat behavior from app UI steps that still require manual verification.
-
-## ChronoGraph Desktop acceptance test
-
-In a fresh Desktop chat, invoke the coordinator with `benchmarks/chronograph/input/original.docx`. Ask it to delegate intake to the architect with a fresh context containing only the original source and generic role/skill instructions. Keep `evaluator/` and prior results out of its context. The architect should bring consequential ambiguities back as questions and stop before implementation.
-
-A separate evaluator scores what it caught and missed after the report is returned. See [benchmark instructions](benchmarks/chronograph/README.md). Desktop-native results and headless CLI results are recorded separately. This is an intake benchmark, not a completed ChronoGraph build.
-
-## Shared checks and adoption
-
-Requirements: Node.js 22+, npm, Git, and macOS or Linux (including WSL). Run `npm ci` once in each checkout/worktree before using the verifier. Day-to-day Desktop work does not require starting a CLI agent. Offline checks need no model credentials.
+## Verify this repository
 
 ```sh
 npm ci
 npm run typecheck
 npm test
 npm run verify:demo
+npm run plugin:check
 ```
 
-The demo verifies only its labeled fixture. For application work, add real checks to `harness.json`, reconcile AGENTS.md with your application, and write task JSON plus Desktop task cards. [Adoption guide](docs/adoption.md).
+The demo exercises a fixture. For real Compose and browser verification, use the [disposable pilot](examples/compose-pilot/README.md). The [ChronoGraph benchmark](benchmarks/chronograph/README.md) measures intake questions.
 
-## Optional scripted and unattended runs
+[Documentation index](docs/README.md) · [0.3 acceptance evidence](docs/hooks-acceptance.md) · [Trust boundaries](docs/security.md) · [MIT license](LICENSE)
 
-Keep the CLI runner for repeatable benchmarks, automation, and unattended tasks. These require an installed, authenticated Codex CLI:
-
-```sh
-npm run harness -- benchmark
-npm run harness -- intake /absolute/path/to/spec.docx
-npm run harness -- doctor
-npm run harness -- run tasks/my-task.json
-npm run harness -- status RUN_ID
-```
-
-The task runner assumes its operator approved the specification. It creates its own worktree, invokes Codex, runs checks independently, and collects a separate review. Default budgets are 3 total implementation attempts, 20 minutes per agent invocation, 10 minutes per check, and 90 minutes per run. These limits do not apply automatically to Desktop chats.
-
-CLI intake and Desktop intake use the same clarification principles; implementation uses the same task contract and `harness.json` checks. An intake report never automatically dispatches a builder. [CLI operation](docs/cli.md).
-
-## Evidence and limitations
-
-Run artifacts live under the Git common directory at `harness/runs`, `harness/intake-runs`, and `harness/verification`. Worktrees and review snapshots are retained there for inspection. Do not delete your Git directory if you need these records. Logs may contain project data; keep them private and review before sharing. There is no automatic retention policy or automatic worktree deletion.
-
-Protected changes to tests, harness controls, skills, schemas, CI, and benchmark fixtures stop the managed run for human review. V1 has no automatic override: implement those changes interactively and review them explicitly. Add public application unit tests outside the protected `tests/` prefix if your project needs routine worker-written tests; keep acceptance controls protected.
-
-The controller and verification commands run as trusted host code. Worktrees, local instructions, and local evidence are not security isolation or tamper-proof attestation. Candidate hashes exclude Git-ignored files; production acceptance must not depend on an unchecked ignored artifact. See [security boundaries](docs/security.md).
-
-[CLI](docs/cli.md) · [Desktop](docs/desktop.md) · [Adoption](docs/adoption.md) · [Compatibility](docs/compatibility.md) · [Scaling](docs/scaling.md) · [Validation report](docs/validation.md)
-
-## License
-
-[MIT](LICENSE), including the supplied ChronoGraph benchmark document and extracted text. This is an independent community example, not an official OpenAI product.
-
-## Solo execution modes
-
-Use the same workflow from Desktop or CLI. Interactive work is the default;
-explicitly requested unattended tasks use the managed controller from either
-interface. One builder per task and sequential work are the default. See
-[execution modes](docs/execution-modes.md).
+Codex Harness is an independent community project.

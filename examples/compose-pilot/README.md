@@ -1,13 +1,13 @@
 # Disposable Compose acceptance pilot
 
-Copy this directory into a disposable Git repo and commit the baseline. Run
-the installed harness `verify --repo /absolute/pilot`. Docker, Compose and image
-registry access are required. The harness creates unique projects and removes
-only its own stack. It builds an API app and Chromium E2E test service.
+Copy this directory's contents, including dotfiles, to a new disposable Git repository and commit the baseline. With Docker running and image registry access available, verify the copy using the installed harness.
 
-The gate checks service health, browser save/trim/reload persistence, invalid
-input rejection, and API retrieval. No host ports or host bind mounts are used.
-The fixture is small evidence of the mechanism, not universal production coverage.
-To reproduce a failure, remove `.trim()` in src/title.mjs in the disposable copy.
-E2E then fails; restore it and reverify. For concurrent workers, assign disjoint
-source paths and preserve the Compose/acceptance controls.
+```sh
+node "<PLUGIN_ROOT>/scripts/harness.mjs" verify --repo "<PILOT_PATH>"
+```
+
+Replace both placeholders with absolute paths. From the template checkout you can also run `npm run harness -- verify --repo "<PILOT_PATH>"`.
+
+The gate builds an API service and a Chromium test service. It checks health, saving and trimming a note, persistence across page reload, invalid input rejection, and API retrieval. The stack uses a unique Compose project for each run, with no published host ports or host bind mounts. Cleanup removes that run's containers and volumes.
+
+To exercise a failure, remove `.trim()` from the disposable copy of `src/title.mjs`, run verification, then restore it and rerun. See the [recorded acceptance runs](../../docs/hooks-acceptance.md) for results.

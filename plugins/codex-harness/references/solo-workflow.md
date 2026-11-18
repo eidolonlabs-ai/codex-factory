@@ -1,67 +1,46 @@
 # Solo task workflow
 
-For the current v3 hook-driven Docker Compose workflow, start with
-[entry paths](entry-paths.md), [hooks](hooks.md) and [orchestration](orchestration.md).
-Legacy v1/v2 examples below remain compatible but do not provide the v3 acceptance contract.
-
-
-Desktop and CLI share interactive and managed modes. Use one sequential builder
-unless independent parallel tasks justify more worktrees. The CLI examples below
-use the installed plugin's scripts/harness.mjs with Node; the template equivalent
-is `node "<PLUGIN_ROOT>/scripts/harness.mjs"`.
+Prepare the approved task and acceptance record, then choose an [execution mode](execution-modes.md).
 
 ## Adopt and prepare
 
-Run setup.mjs with --repo to inspect a preview. Suggestions are drawn from
-existing package scripts, not executed or installed as checks automatically.
-Review the commands and any service/data requirements before configuring them.
-The runtime never treats an empty check list as success. `doctor --mode verify`
-checks verification prerequisites without requiring Codex or a clean checkout;
-`doctor --mode managed` also checks CLI capabilities and clean starting state.
-Authentication is not claimed until a real run succeeds.
-
-Version 1 protection behavior is unchanged. Opt into version 2 only after
-reviewing docs/solo-policy.md and the project's trusted acceptance dependencies.
-For example:
+Use the [entry paths](entry-paths.md) to establish the project baseline. Task and acceptance records use schema version 1, including when `harness.json` uses v3.
 
 ```json
-{"schema_version":2,"checks":[{"name":"acceptance","argv":["node","acceptance/check.mjs"]}],"policy":{"editable_paths":["src","tests/unit"],"protected_paths":["acceptance"]}}
+{
+  "schema_version": 1,
+  "id": "normalize-titles",
+  "title": "Trim note titles",
+  "specification": "Trim string titles before saving and reject whitespace-only titles.",
+  "base_ref": "<approved commit SHA>",
+  "allowed_paths": ["src/title.mjs"],
+  "acceptance_criteria": ["The browser saves trimmed titles and rejects whitespace-only input."]
+}
 ```
 
-Keep the task JSON small and compatible with version 1. Add a companion record:
-
-```json
-{"schema_version":1,"task_sha256":"<SHA256 of JSON.stringify(parsed task)>","base":"<resolved Git base commit>","unresolved_decisions":[],"criteria":[{"id":"save","criterion":"Exact text from task acceptance_criteria","checks":["acceptance"],"manual":[]}],"manual_evidence":[]}
-```
-
-Use the exported `taskDigest` helper from harness/readiness.ts when developing
-against this repository. The `prepare TASK` command emits a draft acceptance
-record with the correct task/base identities and proposed mappings; inspect it
-before saving it and adding required manual/live checks. It never approves a task.
-Task changes invalidate the digest. Each criterion must be mapped exactly once;
-check names must exist. Preflight does not launch an agent or test a live service.
+Save task inputs and evidence outside the worktree, or commit the task before a managed run. Draft the matching acceptance record outside the worktree.
 
 ```sh
-node "<PLUGIN_ROOT>/scripts/harness.mjs" prepare /absolute/task.json --repo /absolute/project
+node "<PLUGIN_ROOT>/scripts/harness.mjs" prepare /absolute/task.json --repo /absolute/project > /absolute/task.acceptance.json
+# Review and edit the draft before preflight.
 node "<PLUGIN_ROOT>/scripts/harness.mjs" preflight /absolute/task.json --acceptance /absolute/task.acceptance.json --repo /absolute/project
 ```
 
+The draft includes the task digest, resolved base, proposed checks, and an unresolved-decision reminder. Confirm which checks prove each criterion (use `compose:e2e` for stack tests), add any manual requirements, and remove the reminder once all decisions are resolved. Map each criterion once. Regenerate the mapping if the task or base changes. Preflight validates these inputs without starting an agent or live service.
+
 ## Execute and inspect
 
-Interactive: implement the approved task in the selected checkout, then use
-`verify --task TASK --acceptance RECORD` and `review --task TASK --acceptance RECORD`.
-Review always runs fresh verification and gives the reviewer the task, criteria,
-check outcomes and full snapshot diff. Managed: use `run TASK --acceptance RECORD`
-from either interface. A managed run launches a separate process; its lifetime
-is not guaranteed after its parent terminal/app closes. An explicit unattended
-request authorizes the chosen managed run; do not repeatedly ask to continue it.
+For interactive work, run `activate TASK --acceptance RECORD` in the checkout.
+The trusted [Stop hook](hooks.md) runs verification and review. Use task-aware
+`verify` and `review` for explicit checks and follow-up evidence. For unattended
+work, run `run TASK --acceptance RECORD`.
 
 `runs` lists up to 50 records per category. `status RUN_ID` preserves raw JSON;
 `handoff RUN_ID` reports freshness, blockers and retained artifact locations.
 Evidence is in the Git common directory's harness folders. A persisted running
 record does not prove the process is live. Ctrl-C cancels the supervised process
 and retains work. After a hard crash, inspect the process and worktree before
-any manual lock removal. No automatic cleanup, resume or lock deletion occurs.
+any manual lock removal. A new run gets its own record. Worktrees and evidence remain available for inspection.
 
 ## Manual evidence and owner disposition
 

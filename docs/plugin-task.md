@@ -1,5 +1,7 @@
 # Plugin distribution task
 
+Historical task record for the initial plugin package. See [current plugin setup](plugin.md).
+
 ## Approved scope
 
 The owner approved the preceding proposal on 2026-11-17: retain this repository

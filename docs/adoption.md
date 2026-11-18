@@ -1,20 +1,10 @@
-# Adopting the template
+# Adopt the repository template
 
-For the current v3 hook-driven Docker Compose workflow, start with
-[entry paths](entry-paths.md), [hooks](hooks.md) and [orchestration](orchestration.md).
-Legacy v1/v2 examples below remain compatible but do not provide the v3 acceptance contract.
+If you already have a project, the [plugin](plugin.md) adds the workflow without changing your build tooling. Choose the template if you want the harness source, project skills, and roles in your repo.
 
+1. Clone the repo or copy it into a new Git repository and run `npm ci`. Each template worktree that runs the npm harness needs its own dependencies. When copying into an existing project, merge package scripts and project instructions with the existing files.
+2. Configure schema v3 in `harness.json`. Define editable paths, trusted acceptance inputs, Compose files, the application services to wait for, and an E2E test service. Use the [Compose pilot](../examples/compose-pilot/README.md) as a reference and check the [Compose requirements](security.md). Add host checks such as type checking or unit tests as needed.
+3. Create an initial Git commit if the repo has none. Run `npm run harness -- doctor --mode verify` followed by `npm run harness -- verify`. Resolve baseline failures and commit the configuration and acceptance checks. The template’s empty legacy config needs project checks before it can verify anything.
+4. Follow the [task entry paths](entry-paths.md). For interactive enforcement, install and trust the [plugin hooks](hooks.md).
 
-Run `npm ci` after cloning the template. Each separate Desktop Worktree needs its own dependency installation; node_modules is ignored and is not carried into new worktrees. For existing Node projects, merge the package scripts/dependencies and TypeScript configuration rather than overwriting their package files.
-
-Start with a new repository for an application, or copy selected files into an existing one after inspecting differences. Preserve project-specific AGENTS.md rules and reconcile `.codex/config.toml`. Do not overwrite another agent's template or global settings.
-
-The empty root `harness.json` is intentional. Configure application checks such as typecheck, unit tests, integration tests, migrations on disposable databases, and browser tests as appropriate. These are trusted commands executed outside Codex's tool sandbox. Install their dependencies yourself or through your existing project setup process.
-
-Keep verification scripts stable. A check that exits zero without exercising acceptance criteria proves nothing. Configure required E2E tests to fail when tooling or services are absent, rather than silently skipping. Do not use a destructive reset against a shared database.
-
-The supplied GitHub workflow checks the harness and demo, not your application. Add the same project verification entry point to your application CI after configuration. Branch protection, required CI checks and ownership rules are remote repository settings and are not installed automatically.
-
-Use `tasks/example.json` only as a format reference. A resolved specification and concrete assertions belong in every real task. Define the smallest allowed path prefixes that cover the work. Public unit tests can be inside application source directories; the root tests directory is protected by default. Changes to protected controls are manual reviewed work in v1.
-
-This template and the supplied ChronoGraph benchmark are MIT licensed. Retain the license notice when reusing or distributing them. Use GitHub's **Use this template** action to create your own repository, then adapt the project checks, tasks, and documentation.
+Keep acceptance commands and their dependencies under [protected paths](solo-policy.md). The harness workflow in this repository tests the harness and its demo. Add the project's own verification command to application CI when you adopt it.

@@ -1,8 +1,6 @@
 # Initial packaging validation
 
-This is the historical 0.1.0 packaging checkpoint. The current installed solo
-release, changed controller, tests and live pilot are recorded in
-[solo acceptance](solo-acceptance.md); its results supersede the gaps below.
+This report records the 0.1.0 packaging checkpoint. See [0.3 acceptance](hooks-acceptance.md) for native hooks and Compose validation.
 
 Local candidate validation on 2026-11-17, macOS arm64, Node 22.22.3.
 Scope and base are recorded in `docs/plugin-task.md`. No application was built

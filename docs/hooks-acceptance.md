@@ -1,8 +1,8 @@
 # Hook-driven local harness acceptance — 2026-11-17
 
 Candidate plugin: 0.3.0, based on c4bcd9f. This report supersedes the earlier
-skills-only acceptance for the newly required hook/Compose workflow. Changes
-are local and uncommitted. The owner approved installation and an isolated native
+skills-only acceptance for the newly required hook/Compose workflow. The verified package shipped on main in
+`fc0f871`. The owner approved installation and an isolated native
 hook test; the local installed plugin is now 0.3.0.
 
 ## Implemented
@@ -146,6 +146,6 @@ and activation commands are trusted operator inputs, not signed attestations.
 External image tags, dependencies and services are re-evaluated on each gate;
 production environment equivalence is not inferred from using Docker.
 
-GitHub distribution of this 0.3 candidate, remote CI/Linux/WSL, public-directory
-hook support and platform-wide Desktop parity have not been validated. No merge,
-push or publication of these new changes has been performed.
+This pilot used a local installation. It did not test installation from the
+published GitHub revision, Linux/WSL, or Desktop parity. See [Compatibility](compatibility.md)
+for platform scope and [Plugin setup](plugin.md) for distribution.

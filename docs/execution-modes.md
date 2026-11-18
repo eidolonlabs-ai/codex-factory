@@ -1,27 +1,9 @@
-# Solo execution modes
+# Interactive and managed execution
 
-For the current v3 hook-driven Docker Compose workflow, start with
-[entry paths](entry-paths.md), [hooks](hooks.md) and [orchestration](orchestration.md).
-Legacy v1/v2 examples below remain compatible but do not provide the v3 acceptance contract.
+Desktop and CLI share the same approved task, acceptance mapping, and candidate evidence. Choose the mode per task.
 
+- **Interactive** suits exploration and small changes. Activate an approved task in the current worktree. Trusted hooks check covered edits and run acceptance at Stop. Failed gates consume a persisted repair budget.
+- **Managed** suits an unattended task. The harness starts a separate Codex CLI process, owns its deadlines, and keeps implementation and review in separate worktrees. Start it from Desktop or a terminal.
+- **Task graph** suits approved tasks with disjoint ownership or explicit dependencies. The controller runs bounded waves and checks the final integrated candidate. [Orchestration](orchestration.md)
 
-Desktop and CLI use one task/acceptance workflow. Interactive sessions in either
-interface follow skills; managed execution adds the external controller's
-process deadlines, attempt budget, independent checks and separate review.
-
-Use interactive work for exploration and small edits. An explicit unattended
-request for an approved task selects managed execution, from either interface.
-The controller starts another Codex process; it does not supervise its parent
-chat. One builder per task and sequential dependencies are the solo defaults.
-Use parallel worktrees only when ownership is disjoint and dependencies permit.
-
-Before a managed run, inspect the task, preflight it, and configure real checks.
-Launch the installed scripts/harness.mjs with Node (or npm run harness in this
-template), using absolute source/task/config paths outside the project. Keep
-monitoring the run's persisted ID and status. Interrupt the controller with
-Ctrl-C to terminate its owned subprocess group and retain work/evidence.
-Do not assume that closing Desktop or a terminal keeps the process alive.
-
-Both modes require integrated verification and independent review before human
-merge handoff. Evidence must match the current candidate. A zero-exit reviewer
-process means collection succeeded, not that there are no findings.
+Use one builder for straightforward work. For handoff, inspect the current candidate, verification results, manual evidence, and review findings before recording an owner decision. [Task workflow](solo-workflow.md) · [CLI reference](https://github.com/theRealMarkCastillo/codex-harness/blob/main/docs/cli.md)

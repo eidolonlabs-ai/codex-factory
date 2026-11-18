@@ -27,6 +27,6 @@ This is partial Desktop acceptance with explicit user deferral of GUI acceptance
 
 ## Hooks and CLI evidence
 
-No hook was installed; the workflow and verifier function without hooks. Hook trust/inspection testing is therefore not applicable.
+This Desktop exercise predated the hook bundle. The later [0.3 acceptance report](hooks-acceptance.md) covers native CLI dispatch. Desktop hook trust is still unverified.
 
 Headless CLI intake and the separate one-file live implementation/review smoke test are documented in [validation](validation.md). They are not counted as Desktop UI acceptance.

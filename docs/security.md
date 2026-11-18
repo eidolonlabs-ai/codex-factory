@@ -1,13 +1,11 @@
 # Trust and enforcement boundaries
 
-Codex sandboxing controls Codex tool execution. Git worktrees prevent ordinary branch/file collisions but share Git metadata and credentials. Repository instructions and skills guide the model; they cannot mechanically enforce permissions.
+Review a project's instructions, commands, and Compose configuration before invoking the harness. The controller executes verification with the user's OS permissions, including Docker access. Codex sandbox policy governs the agent's tools. Git worktrees separate working copies and share Git metadata.
 
-The controller is trusted local code. Its verification commands run with the user's OS permissions and are not automatically sandboxed. Only configure reviewed commands for trusted application code. For hostile inputs/code, use a dedicated container/VM with appropriate mounts, network controls, and no production credentials.
+Trusted native hooks can block covered commands and direct patches in adopted projects. Verification also checks the final candidate against task scope and protected paths. See [hook coverage](hooks.md) and [protection policy](solo-policy.md).
 
-The controller freezes the command list in memory and detects candidate changes across checks/review. This prevents common accidental weakening and stale verification. It does not make tests immutable, prevent a malicious worker from altering local artifacts, or guarantee detection of ignored-file mutations. Symlink entries are hashed as links, not dereferenced contents. External dependencies, services and data can change outside the hash.
+The Compose gate gives each run its own project identity and cleans up its own containers and volumes. Give each application service a healthcheck and use the Compose network for E2E traffic. The gate rejects fixed host ports, host bind mounts, privileged services, external or shared networks/volumes, custom driver options, and explicit image tags on services it builds. A separate execution environment and verifier identity are needed to keep acceptance inputs inaccessible to a builder.
 
-Protected path checks run after the worker, so they detect changes rather than preventing writes. A protected edit causes a human handoff. An external CI/verifier must enforce any stronger acceptance boundary. Do not place secret holdouts in the worker repository and describe them as sealed.
+Candidate hashes cover the Git candidate, including unstaged and untracked non-ignored files. Ignored files, external services, mutable image tags, and symlink targets can change independently. Keep trusted inputs under review and rerun acceptance for the candidate you plan to ship.
 
-Read-only intake receives only the generic architect prompt and extracted source text. The evaluator rubric is not supplied, but filesystem read access may extend beyond that workspace. Use separated environments if the benchmark requires strict blindness.
-
-The runtime captures stdout/stderr and task prompts; they may contain sensitive project content. Artifact retention is local and manual. Never publish raw session logs without inspecting them.
+The Git common directory retains task prompts, check logs, and review evidence. Review artifacts before sharing. For a blind benchmark, isolate evaluator files from the agent's accessible filesystem.

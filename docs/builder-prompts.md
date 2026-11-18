@@ -1,6 +1,6 @@
 # Desktop prompts
 
-Start each builder as a new Codex Desktop chat in the same project. Select **Worktree** under the composer, choose the approved base branch, and submit its prompt. Confirm the resulting checkout's base SHA matches the task. Use a common committed base; do not accidentally carry unrelated unstaged changes into builders. These UI steps follow the current [OpenAI Worktree guide](https://learn.chatgpt.com/docs/environments/git-worktrees); see desktop acceptance evidence for what was observed on this machine.
+Start each builder as a new Codex Desktop chat in the same project. Select **Worktree** under the composer, choose the approved base branch, and submit its prompt. Confirm the resulting checkout's base SHA matches the task. Use a common committed base; do not accidentally carry unrelated unstaged changes into builders. These UI steps follow the current [OpenAI Worktree guide](https://learn.chatgpt.com/docs/environments/git-worktrees); see [Desktop acceptance](https://github.com/theRealMarkCastillo/codex-harness/blob/main/docs/desktop-acceptance.md) for what was observed on this machine.
 
 ## Coordinator
 
@@ -21,10 +21,11 @@ $implement-task
 You are builder A in this Desktop Worktree chat.
 Read docs/specs/approved.md, tasks/task-a.json, and docs/tasks/task-a.md.
 Use the base commit, acceptance criteria, owned paths, and dependencies recorded there.
-Confirm the checkout base before editing. Modify only your assigned files.
+Confirm the checkout base and activate the task with its approved acceptance
+record before editing. Modify only your assigned files.
 If a dependency or contract is unresolved, report it to the coordinator and stop.
 Implement here in the app; do not launch codex exec or the TypeScript task runner.
-Run targeted checks and the configured shared verifier. Return your full diff,
+Run targeted checks and let the trusted Stop hook run acceptance. Return your full diff,
 base/HEAD, changed files, check results, and remaining gaps. Do not merge or publish.
 ```
 
