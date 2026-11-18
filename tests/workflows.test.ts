@@ -383,3 +383,14 @@ test("SIGINT during post-agent Git inspection records interruption and releases 
   assert.equal(result.status, "interrupted");
   assert.equal(existsSync(result.lock), false);
 });
+
+test("runTask releases task lock even if managed.json was deleted during execution", async (t) => {
+  const r = repo(t);
+  const remover = fake(
+    r.root,
+    `const p=require('node:path'),crypto=require('node:crypto');if(args.includes('--json')){const top=fs.realpathSync(cp.execFileSync('git',['rev-parse','--show-toplevel'],{encoding:'utf8'}).trim());const common=cp.execFileSync('git',['rev-parse','--path-format=absolute','--git-common-dir'],{encoding:'utf8'}).trim();const hash=crypto.createHash('sha256').update(top).digest('hex').slice(0,24);fs.rmSync(p.join(common,'factory','hooks',hash,'managed.json'),{force:true});${report}}else{fs.writeFileSync(args[args.indexOf('--output-last-message')+1],'No findings.');}`,
+  );
+  const res = await runTask(r.path, TASK, config(), remover);
+  assert.equal(res.status, "ready_for_human_review");
+  assert.equal(existsSync(res.lock), false);
+});

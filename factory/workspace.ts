@@ -112,7 +112,20 @@ export function snapshotCandidate(w: Workspace): string {
         .filter(Boolean),
     ),
   ].sort();
+  const checkedDirs = new Set<string>();
   for (const name of files) {
+    const parts = name.split("/");
+    for (let i = 1; i < parts.length; i++) {
+      const prefix = parts.slice(0, i).join("/");
+      if (checkedDirs.has(prefix)) continue;
+      try {
+        if (lstatSync(join(w.path, prefix)).isSymbolicLink())
+          throw new Error(`Unsafe symlink parent in candidate: ${name}`);
+        checkedDirs.add(prefix);
+      } catch (e) {
+        if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
+      }
+    }
     const p = join(w.path, name);
     h.update(name).update("\0");
     let stat;

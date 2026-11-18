@@ -36,11 +36,12 @@ export class InterruptScope {
     process.off("SIGTERM", this.handler);
   }
 }
-function killGroup(pid: number, signal: NodeJS.Signals) {
+function killGroup(pid: number, signal: NodeJS.Signals, allowEperm = false) {
   try {
     process.kill(-pid, signal);
   } catch (e) {
-    if ((e as NodeJS.ErrnoException).code !== "ESRCH") throw e;
+    const code = (e as NodeJS.ErrnoException).code;
+    if (code !== "ESRCH" && !(allowEperm && code === "EPERM")) throw e;
   }
 }
 export async function runProcess(
@@ -104,8 +105,8 @@ export async function runProcess(
       },
     );
     if (child.pid) {
-      killGroup(child.pid, "SIGTERM");
-      killGroup(child.pid, "SIGKILL");
+      killGroup(child.pid, "SIGTERM", true);
+      killGroup(child.pid, "SIGKILL", true);
     }
     if (result.error) writeFileSync(err, result.error);
     if (interrupted) throw new Interrupted();

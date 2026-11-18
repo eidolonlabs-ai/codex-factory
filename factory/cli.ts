@@ -2,8 +2,8 @@ import { orchestrate, parsePlan } from "./orchestrate.js";
 import { activate, deactivate, hookStatus } from "./hooks.js";
 import { verifyProject } from "./compose.js";
 import { parseArgs } from "node:util";
-import { resolve, join } from "node:path";
-import { readFileSync } from "node:fs";
+import { resolve, join, dirname } from "node:path";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { doctor } from "./doctor.js";
 import { runIntake } from "./intake.js";
@@ -50,12 +50,13 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
         model: { type: "string" },
         mode: { type: "string" },
         file: { type: "string" },
+        out: { type: "string" },
         help: { type: "boolean", short: "h" },
       },
     });
     if (values.help) {
       console.log(
-        "Codex factory: orchestrate PLAN | activate TASK --acceptance RECORD | deactivate | hooks-status | doctor | prepare TASK | preflight TASK | intake SOURCE | benchmark | run TASK | verify | review | status RUN_ID | runs | handoff RUN_ID | disposition RUN_ID\nOptions: --repo PATH; --config PATH; --task PATH (verify/review); --acceptance PATH (preflight/run/verify/review); --mode verify|managed (doctor); --file PATH (disposition); --timeout SECONDS --model MODEL (intake/benchmark)",
+        "Codex factory: orchestrate PLAN | activate TASK --acceptance RECORD | deactivate | hooks-status | doctor | prepare TASK | preflight TASK | intake SOURCE | benchmark | run TASK | verify | review | status RUN_ID | runs | handoff RUN_ID | disposition RUN_ID\nOptions: --repo PATH; --config PATH; --task PATH (verify/review); --acceptance PATH (preflight/run/verify/review); --out PATH (prepare); --mode verify|managed (doctor); --file PATH (disposition); --timeout SECONDS --model MODEL (intake/benchmark)",
       );
       return 0;
     }
@@ -109,19 +110,22 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
       model: ["intake", "benchmark"],
       mode: ["doctor"],
       file: ["disposition"],
+      out: ["prepare"],
     }))
       if (values[option as keyof typeof values] && !commands.includes(command))
         throw new Error("Option is not supported for this command");
     const repo = resolve(values.repo ?? ".");
     let result: unknown, success: boolean;
+    let interrupted = false;
     if (command === "orchestrate") {
-      result = await orchestrate(
+      const r = await orchestrate(
         repo,
         parsePlan(JSON.parse(readFileSync(resolve(arg!), "utf8"))),
         loadConfig(resolve(values.config ?? join(repo, "factory.json"))),
       );
-      success =
-        (result as { status: string }).status === "ready_for_human_review";
+      result = r;
+      interrupted = r.status === "interrupted";
+      success = r.status === "ready_for_human_review";
     } else if (command === "activate") {
       if (!values.acceptance)
         throw new Error("Activation requires --acceptance PATH");
@@ -264,6 +268,11 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
           })),
           manual_evidence: [],
         };
+        if (values.out) {
+          const outPath = resolve(values.out);
+          mkdirSync(dirname(outPath), { recursive: true });
+          writeFileSync(outPath, JSON.stringify(result, null, 2) + "\n");
+        }
         success = true;
       } else if (command === "preflight") {
         result = readiness;
@@ -271,6 +280,7 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
       } else if (command === "run") {
         const r = await runTask(repo, task!, config, "codex", acceptance);
         result = r;
+        interrupted = r.status === "interrupted";
         success = r.status === "ready_for_human_review";
       } else {
         if (command === "review" && !task)
@@ -396,7 +406,7 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
       }
     }
     console.log(JSON.stringify(result, null, 2));
-    return success ? 0 : 1;
+    return interrupted ? 130 : success ? 0 : 1;
   } catch (e) {
     console.error(`error: ${e instanceof Error ? e.message : String(e)}`);
     return e instanceof Interrupted ? 130 : 2;

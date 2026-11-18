@@ -1,5 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { mkdirSync } from "node:fs";
+import {
+  closeSync,
+  mkdirSync,
+  openSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import {
   fields,
@@ -23,6 +29,7 @@ import { scopeViolations } from "./verify.js";
 import { buildReviewPacket } from "./review-packet.js";
 import { reviewCandidate } from "./review.js";
 import { writeResult } from "./evidence.js";
+import { Interrupted, InterruptScope } from "./process.js";
 export interface Plan {
   schema_version: 1;
   task: Task;
@@ -91,6 +98,8 @@ export function parsePlan(value: unknown): Plan {
         throw new Error("Overlapping ownership requires a dependency");
     }
   const task = parseTask(value.task);
+  if (ids.includes(task.id))
+    throw new Error("Plan task ID cannot collide with a node task ID");
   for (const n of nodes)
     if (
       n.task.allowed_paths.some(
@@ -134,17 +143,45 @@ export async function orchestrate(
       );
   }
   const id = randomUUID().replaceAll("-", "");
-  const run_dir = join(storage(repo), "orchestrations", id),
-    path = join(storage(repo), "integration", id);
-  mkdirSync(run_dir, { recursive: true });
-  mkdirSync(join(path, ".."), { recursive: true });
-  git(repo, "worktree", "add", "-b", `factory/integration/${id}`, path, base);
+  const home = storage(repo);
+  for (const name of ["locks", "orchestrations", "integration"])
+    mkdirSync(join(home, name), { recursive: true });
+  const lock = join(home, "locks", plan.task.id);
+  let lockFd: number;
+  try {
+    lockFd = openSync(lock, "wx", 0o600);
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === "EEXIST")
+      throw new Error(
+        `Task locked: ${lock}; inspect before removing stale lock`,
+      );
+    throw e;
+  }
+  try {
+    writeFileSync(lockFd, `pid=${process.pid} orchestration=${id}\n`);
+  } finally {
+    closeSync(lockFd);
+  }
+  const run_dir = join(home, "orchestrations", id),
+    path = join(home, "integration", id);
+  try {
+    mkdirSync(run_dir, { recursive: true });
+    git(repo, "worktree", "add", "-b", `factory/integration/${id}`, path, base);
+  } catch (e) {
+    try {
+      unlinkSync(lock);
+    } catch (unlinkErr) {
+      if ((unlinkErr as NodeJS.ErrnoException).code !== "ENOENT")
+        throw unlinkErr;
+    }
+    throw e;
+  }
   const w: Workspace = {
     path,
     run_dir,
     base,
     branch: `factory/integration/${id}`,
-    lock: "",
+    lock,
   };
   const result: {
     run_id: string;
@@ -153,6 +190,7 @@ export async function orchestrate(
     workspace: string;
     base: string;
     run_dir: string;
+    lock: string;
     workers: RunResult[];
     reason?: string;
     candidate?: string;
@@ -164,16 +202,20 @@ export async function orchestrate(
     workspace: path,
     base,
     run_dir,
+    lock,
     workers: [],
     schema_version: 1,
     task: plan.task,
   };
   const save = () => writeResult(run_dir, result);
   save();
+  const interrupts = new InterruptScope();
   const deadline = performance.now() + config.limits.run_seconds * 1000;
   const done = new Set<string>();
   try {
+    await interrupts.checkpoint();
     while (done.size < plan.nodes.length) {
+      await interrupts.checkpoint();
       if (performance.now() >= deadline)
         throw new Error("Orchestration deadline exhausted");
       const wave = plan.nodes
@@ -190,6 +232,11 @@ export async function orchestrate(
       });
       const settled = await Promise.allSettled(
         wave.map(async (n) => {
+          const remainingSeconds = Math.floor(
+            (deadline - performance.now()) / 1000,
+          );
+          if (remainingSeconds < 1)
+            throw new Error("Orchestration deadline exhausted");
           const task = { ...n.task, base_ref: waveBase };
           const acceptance = {
             ...n.acceptance,
@@ -204,10 +251,7 @@ export async function orchestrate(
               ...config,
               limits: {
                 ...config.limits,
-                run_seconds: Math.max(
-                  1,
-                  Math.floor((deadline - performance.now()) / 1000),
-                ),
+                run_seconds: remainingSeconds,
               },
             },
             codex,
@@ -223,6 +267,9 @@ export async function orchestrate(
       );
       result.workers.push(...outcomes);
       save();
+      await interrupts.checkpoint();
+      if (outcomes.some((r) => r.status === "interrupted"))
+        throw new Interrupted();
       if (
         settled.some((r) => r.status === "rejected") ||
         outcomes.some((r) => r.status !== "ready_for_human_review")
@@ -231,6 +278,7 @@ export async function orchestrate(
           "Worker blocked or failed; retained worktrees require inspection",
         );
       for (const [index, r] of outcomes.entries()) {
+        await interrupts.checkpoint();
         if (!r.review?.snapshot_commit)
           throw new Error("Missing reviewed worker snapshot");
         git(path, "cherry-pick", "--no-commit", r.review.snapshot_commit);
@@ -248,6 +296,7 @@ export async function orchestrate(
         done.add(wave[index]!.task.id);
       }
     }
+    await interrupts.checkpoint();
     result.status = "verifying";
     save();
     const violations = scopeViolations(
@@ -257,6 +306,7 @@ export async function orchestrate(
     );
     if (violations.length) throw new Error(violations.join("; "));
     const verification = await verifyProject(w, config, deadline);
+    await interrupts.checkpoint();
     result.verification = verification;
     if (!verification.passed) throw new Error(verification.reason);
     result.candidate = verification.candidate;
@@ -287,6 +337,7 @@ export async function orchestrate(
         })),
       },
     );
+    await interrupts.checkpoint();
     if (!(result.review as { collected: boolean }).collected)
       throw new Error("Integrated review was not collected");
     result.status = (result.missing_evidence as string[]).length
@@ -295,8 +346,15 @@ export async function orchestrate(
     result.reason =
       "Integrated checks and independent review collected; worker and integration review findings require owner disposition. Main unchanged.";
   } catch (e) {
-    result.status = "blocked";
+    result.status = e instanceof Interrupted ? "interrupted" : "blocked";
     result.reason = e instanceof Error ? e.message : String(e);
+  } finally {
+    interrupts.dispose();
+    try {
+      unlinkSync(lock);
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
+    }
   }
   save();
   return result;

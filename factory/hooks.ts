@@ -1,5 +1,12 @@
 import { Interrupted } from "./process.js";
-import { decideGuard, evaluateShellGuard } from "./guard.js";
+import {
+  decideGuard,
+  evaluateShellGuard,
+  type GuardContext,
+  type GuardEvaluation,
+  type ShellGuardOptions,
+  type WriteTargetKind,
+} from "./guard.js";
 
 export { decideGuard };
 import { createHash, randomUUID } from "node:crypto";
@@ -12,6 +19,7 @@ import {
   openSync,
   closeSync,
   unlinkSync,
+  rmSync,
   realpathSync,
   appendFileSync,
   lstatSync,
@@ -24,7 +32,11 @@ import {
   configDigest,
   missingEvidence,
 } from "./readiness.js";
-import { classifyChanges, resolvePolicy } from "./policy.js";
+import {
+  classifyChanges,
+  resolvePolicy,
+  type ProtectionPolicy,
+} from "./policy.js";
 import {
   git,
   storage,
@@ -32,7 +44,7 @@ import {
   type Workspace,
 } from "./workspace.js";
 import { verifyProject } from "./compose.js";
-import { scopeViolations } from "./verify.js";
+import { scopeViolations, type VerificationResult } from "./verify.js";
 import { reviewCandidate } from "./review.js";
 import { buildReviewPacket } from "./review-packet.js";
 import { writeResult } from "./evidence.js";
@@ -41,7 +53,12 @@ export interface HookEvent {
   cwd: string;
   session_id?: string;
   tool_name?: string;
-  tool_input?: { command?: string; [key: string]: unknown };
+  tool_input?: {
+    command?: string;
+    file_path?: string;
+    path?: string;
+    [key: string]: unknown;
+  };
 }
 interface Active {
   version: 1;
@@ -116,16 +133,16 @@ export function deactivate(repo: string) {
   );
   return { status: "deactivated", previous_status: state.status };
 }
-export function guardCommand(command: string): string | undefined {
-  if (/--no-verify\b|\bHUSKY\s*=\s*0\b|core\.hooksPath\s*=/i.test(command))
-    return "Verification bypass is prohibited";
-  if (
-    /\brm\s+(?:[^\n;&|]*\s)?-[a-z]*r[a-z]*f|\brm\s+(?:[^\n;&|]*\s)?-[a-z]*f[a-z]*r|\bgit\s+(?:reset\s+--hard|clean\s+-[^\n]*f)|\bdocker\s+(?:system|volume|container|image)\s+prune/i.test(
-      command,
-    )
-  )
-    return "Destructive bulk operation requires a separate operator action";
-  const evalResult = evaluateShellGuard(command, { respectOutside: false });
+export function guardCommand(
+  command: string,
+  options: ShellGuardOptions = {},
+): string | undefined {
+  const evalResult = evaluateShellGuard(command, {
+    root: options.root ?? "/repo",
+    cwd: options.cwd ?? options.root ?? "/repo",
+    respectOutside: options.respectOutside ?? true,
+    ...options,
+  });
   if (evalResult.decision !== "allow") {
     return (
       evalResult.reason ??
@@ -139,7 +156,7 @@ export function patchPaths(command: string): string[] {
     ...command.matchAll(
       /^\*\*\* (?:Add File|Update File|Delete File|Move to): (.+)$/gm,
     ),
-  ].map((m) => m[1]!);
+  ].map((m) => m[1]!.replace(/\r$/, ""));
 }
 function deny(reason: string) {
   return {
@@ -149,6 +166,60 @@ function deny(reason: string) {
       permissionDecisionReason: reason,
     },
   };
+}
+function hasSymlinkComponent(repo: string, relPath: string): boolean {
+  const parts = relPath.split("/");
+  for (let i = 1; i <= parts.length; i++) {
+    try {
+      if (lstatSync(join(repo, ...parts.slice(0, i))).isSymbolicLink())
+        return true;
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
+    }
+  }
+  return false;
+}
+function normalizeRepoTarget(
+  repo: string,
+  cwd: string,
+  rawPath: string,
+): string {
+  const realCwd = realpathSync(cwd);
+  const stripped = rawPath.startsWith(cwd + "/")
+    ? rawPath.slice(cwd.length + 1)
+    : rawPath.startsWith(realCwd + "/")
+      ? rawPath.slice(realCwd.length + 1)
+      : rawPath;
+  const resolved = resolve(realCwd, stripped);
+  const rel = relative(repo, resolved);
+  if (rel === ".." || rel.startsWith("../")) {
+    try {
+      const parentRel = relative(repo, realpathSync(resolve(resolved, "..")));
+      if (parentRel !== ".." && !parentRel.startsWith("../")) {
+        const name = resolved.split("/").pop() ?? "";
+        return parentRel ? `${parentRel}/${name}` : name;
+      }
+    } catch {
+      /* keep outside-repository relative path */
+    }
+  }
+  return rel;
+}
+function checkPolicyTarget(
+  repo: string,
+  relPath: string,
+  allowedPaths: string[],
+  policy: ProtectionPolicy,
+  enforceScope: boolean,
+): string | undefined {
+  if (hasSymlinkComponent(repo, relPath))
+    return "Patch through symlink is not allowed";
+  const violations = classifyChanges([relPath], allowedPaths, policy).filter(
+    (v) => enforceScope || v.reason.includes("protected"),
+  );
+  if (violations.length)
+    return violations.map((v) => `${v.path}: ${v.reason}`).join("; ");
+  return undefined;
 }
 export async function handleHook(event: HookEvent) {
   let repo: string;
@@ -227,45 +298,80 @@ export async function handleHook(event: HookEvent) {
       },
     };
   if (event.hook_event_name === "PreToolUse") {
-    const command = event.tool_input?.command ?? "";
-    if (typeof command !== "string") return deny("Malformed tool command");
-    const reason = guardCommand(command);
-    if (reason) return deny(reason);
+    const policy = resolvePolicy(config);
+    const allowedPaths =
+      active?.task.allowed_paths ?? managed?.task.allowed_paths ?? [];
     if (["apply_patch", "Edit", "Write"].includes(event.tool_name ?? "")) {
       if (!active && !managed)
         return deny("Activate an approved task before implementation edits");
-      const paths = patchPaths(command);
+      let paths: string[] = [];
+      if (event.tool_name === "apply_patch") {
+        const command = event.tool_input?.command ?? "";
+        if (typeof command !== "string") return deny("Malformed tool command");
+        paths = patchPaths(command);
+      } else {
+        const target = event.tool_input?.file_path ?? event.tool_input?.path;
+        if (typeof target === "string" && target.trim()) {
+          paths = [target.trim()];
+        } else if (typeof event.tool_input?.command === "string") {
+          paths = patchPaths(event.tool_input.command);
+        }
+      }
       if (!paths.length) return deny("Unrecognized patch format");
       const normalized = paths.map((p) =>
-        relative(
-          repo,
-          resolve(
-            realpathSync(event.cwd),
-            p.startsWith(event.cwd + "/") ? p.slice(event.cwd.length + 1) : p,
-          ),
-        ),
+        normalizeRepoTarget(repo, event.cwd, p),
       );
-      if (normalized.some((p) => p.startsWith("../") || !p || p.includes("\0")))
+      if (
+        normalized.some(
+          (p) => p === ".." || p.startsWith("../") || !p || p.includes("\0"),
+        )
+      )
         return deny("Patch leaves repository");
-      for (const p of normalized) {
-        const parts = p.split("/");
-        for (let i = 1; i <= parts.length; i++)
-          try {
-            if (lstatSync(join(repo, ...parts.slice(0, i))).isSymbolicLink())
-              return deny("Patch through symlink is not allowed");
-          } catch (e) {
-            if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
-          }
+      for (const relPath of normalized) {
+        const issue = checkPolicyTarget(
+          repo,
+          relPath,
+          allowedPaths,
+          policy,
+          true,
+        );
+        if (issue) return deny(issue);
       }
-      const policy = resolvePolicy(config);
-      const violations = classifyChanges(
-        normalized,
-        active?.task.allowed_paths ?? managed!.task.allowed_paths,
-        policy,
-      );
-      if (violations.length)
-        return deny(violations.map((v) => `${v.path}: ${v.reason}`).join("; "));
+      return {};
     }
+    const command = event.tool_input?.command ?? "";
+    if (typeof command !== "string") return deny("Malformed tool command");
+    const ctx: GuardContext = {
+      controlPrefixes: [".factory/", ".git/factory/"],
+      frozen: policy.protected_paths,
+    };
+    const reason = guardCommand(command, {
+      root: repo,
+      cwd: event.cwd,
+      ctx,
+      respectOutside: true,
+      onRepoWriteTarget: (
+        relPath: string,
+        rawTarget: string,
+        kind: WriteTargetKind,
+      ): GuardEvaluation | undefined => {
+        if (hasSymlinkComponent(repo, relPath))
+          return {
+            decision: "deny",
+            reason: `Shell ${kind} through symlink is not allowed (${rawTarget}).`,
+          };
+        const enforceScope = Boolean((active || managed) && kind === "write");
+        const issue = checkPolicyTarget(
+          repo,
+          relPath,
+          allowedPaths,
+          policy,
+          enforceScope,
+        );
+        return issue ? { decision: "deny", reason: issue } : undefined;
+      },
+    });
+    if (reason) return deny(reason);
     return {};
   }
   if (event.hook_event_name !== "Stop") return {};
@@ -317,6 +423,7 @@ export async function handleHook(event: HookEvent) {
     branch: "",
     lock: "",
   };
+  let verification: VerificationResult | undefined;
   try {
     if (!existsSync(join(repo, "factory.json")))
       throw new Error("Frozen factory configuration changed: file removed");
@@ -349,11 +456,9 @@ export async function handleHook(event: HookEvent) {
     if (violations.length) throw new Error(violations.join("; "));
     const deadline =
       performance.now() + Math.min(config.limits.run_seconds, 1500) * 1000;
-    const verification = await verifyProject(w, config, deadline);
+    verification = await verifyProject(w, config, deadline);
     if (!verification.passed) throw new Error(verification.reason);
     const pending = missingEvidence(active.acceptance, verification.candidate);
-    if (pending.length)
-      throw new Error("Manual evidence required: " + pending.join("; "));
     const review = await reviewCandidate(
       w,
       verification.candidate!,
@@ -370,10 +475,14 @@ export async function handleHook(event: HookEvent) {
       ),
     );
     if (!review.collected) throw new Error(review.reason);
-    active.status = "ready_for_human_review";
+    active.status = pending.length
+      ? "awaiting_manual_evidence"
+      : "ready_for_human_review";
     active.candidate = verification.candidate;
-    active.reason =
-      "Checks passed and independent review collected; owner disposition pending";
+    active.reason = pending.length
+      ? "Checks passed and independent review collected; manual evidence required: " +
+        pending.join("; ")
+      : "Checks passed and independent review collected; owner disposition pending";
     writeResult(w.run_dir, {
       ...verification,
       schema_version: 1,
@@ -388,21 +497,29 @@ export async function handleHook(event: HookEvent) {
       config_sha256: configDigest(config),
     });
     save(dir, active);
-    return { systemMessage: active.reason + `; evidence ${w.run_dir}` };
+    return pending.length
+      ? {
+          continue: false,
+          stopReason: active.reason,
+          systemMessage: `Factory awaiting manual evidence (${w.run_dir}): ${pending.join("; ")}`,
+        }
+      : { systemMessage: active.reason + `; evidence ${w.run_dir}` };
   } catch (e) {
     if (!(e instanceof Interrupted)) active.attempts++;
+    if (verification?.candidate) active.candidate = verification.candidate;
     active.reason = e instanceof Error ? e.message : String(e);
     active.status =
       e instanceof Interrupted
         ? "interrupted"
         : active.attempts >= config.limits.attempts ||
-            /configuration changed|scope|protected|Manual evidence/.test(
+            /configuration changed|scope|editable paths|protected|symlink|Manual evidence/.test(
               active.reason,
             )
           ? "blocked"
           : "repair_needed";
     save(dir, active);
     writeResult(w.run_dir, {
+      ...(verification ? verification : {}),
       schema_version: 1,
       run_id: id,
       status: active.status,
@@ -437,5 +554,5 @@ export function managedContext(repo: string, task: Task, config: Config) {
     flag: "wx",
     mode: 0o600,
   });
-  return Object.assign(() => unlinkSync(p), { token });
+  return Object.assign(() => rmSync(p, { force: true }), { token });
 }

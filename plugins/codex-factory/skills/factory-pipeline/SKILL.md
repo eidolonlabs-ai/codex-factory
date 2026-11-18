@@ -45,7 +45,7 @@ Native subagents are for bounded read-only investigation, contract analysis, and
 
 1. **Integration & Verify (`$factory-verify`)**: Collect builder handoffs, inspect actual diffs, integrate into a dedicated integration Worktree in dependency order, and run `$factory-verify` (`verify --task TASK --acceptance RECORD`) plus required live/browser checks (`NOT_RUN !== PASS`).
 2. **Cold-Context Review (`$factory-review`)**: Delegate a fresh native `factory-reviewer` (`reviewer`) over the combined candidate using `$factory-review` (or `/review`). Enforce **Reproduce Before Fixing**: capture a failing test reproducing any material defect before patching, then re-verify.
-3. **State & Handoff (`$factory-status`)**: Maintain `docs/development-state.md` using its template and check `$factory-status` (`hooks-status`, `status`, `runs`, `handoff RUN_ID`). Present final evidence and unresolved risks before asking the owner to merge; never merge or publish automatically.
+3. **State & Handoff (`$factory-status`)**: Maintain the project’s `docs/factory/development-state.md` using `../../templates/development-state.md` and check `$factory-status` (`hooks-status`, `status`, `runs`, `handoff RUN_ID`). Present final evidence and unresolved risks before asking the owner to merge; never merge or publish automatically.
 
 Native plugin hooks are required for interactive enforcement in adopted projects (`../../references/hooks.md`). Report interactive versus managed execution separately from host-specific observations.
 

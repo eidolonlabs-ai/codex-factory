@@ -139,3 +139,70 @@ for (const locked of [false, true])
       assert.match(git(result.workspace, "show", "HEAD:src/b"), /implemented/);
     }
   });
+
+test("orchestrate locks plan.task.id and records interrupted on SIGINT", async (t) => {
+  const { existsSync } = await import("node:fs");
+  const { spawn } = await import("node:child_process");
+  const { pathToFileURL } = await import("node:url");
+  const { resolve } = await import("node:path");
+  const r = repo(t);
+  writeFileSync(join(r.path, "compose.yaml"), "services: {}");
+  const cfg = parseConfig({
+    schema_version: 3,
+    checks: [],
+    policy: { editable_paths: ["src"], protected_paths: ["acceptance"] },
+    compose: {
+      files: ["compose.yaml"],
+      services: ["api"],
+      test_service: "e2e",
+    },
+    limits: { run_seconds: 60, agent_seconds: 10 },
+  });
+  writeFileSync(join(r.path, "factory.json"), JSON.stringify(cfg));
+  git(r.path, "add", ".");
+  git(r.path, "commit", "-m", "config");
+  const base = git(r.path, "rev-parse", "HEAD");
+  const p = plan([node("one", ["src/a"], [])]);
+  p.acceptance.base = base;
+  (p.nodes as ReturnType<typeof node>[])[0]!.acceptance.base = base;
+  const parsed = parsePlan(p);
+
+  mkdirSync(join(storage(r.path), "locks"), { recursive: true });
+  writeFileSync(join(storage(r.path), "locks/whole"), "locked");
+  await assert.rejects(() => orchestrate(r.path, parsed, cfg), /Task locked/);
+  const { unlinkSync } = await import("node:fs");
+  unlinkSync(join(storage(r.path), "locks/whole"));
+
+  const ready = join(r.root, "orch-ready");
+  const codexDir = join(r.root, "codex");
+  mkdirSync(codexDir);
+  const codex = fake(
+    codexDir,
+    `fs.writeFileSync(${JSON.stringify(ready)},'ready');setInterval(()=>{},1000);`,
+  );
+  const code = `import {orchestrate} from ${JSON.stringify(pathToFileURL(resolve("factory/orchestrate.ts")).href)};console.log(JSON.stringify(await orchestrate(${JSON.stringify(r.path)},${JSON.stringify(parsed)},${JSON.stringify(cfg)},${JSON.stringify(codex)})));`;
+  const child = spawn(
+    process.execPath,
+    ["--import", "tsx", "--input-type", "module", "-e", code],
+    { stdio: ["ignore", "pipe", "pipe"] },
+  );
+  let out = "";
+  let err = "";
+  child.stdout.on("data", (x) => (out += x));
+  child.stderr.on("data", (x) => (err += x));
+  t.after(() => {
+    if (child.exitCode === null) child.kill("SIGKILL");
+  });
+  const ended = new Promise<number | null>((resolveExit) =>
+    child.once("exit", resolveExit),
+  );
+  const waitDeadline = Date.now() + 5000;
+  while (!existsSync(ready) && Date.now() < waitDeadline)
+    await new Promise((res) => setTimeout(res, 20));
+  assert.ok(existsSync(ready), err);
+  child.kill("SIGINT");
+  assert.equal(await ended, 0, err);
+  const res = JSON.parse(out);
+  assert.equal(res.status, "interrupted");
+  assert.equal(existsSync(join(storage(r.path), "locks/whole")), false);
+});

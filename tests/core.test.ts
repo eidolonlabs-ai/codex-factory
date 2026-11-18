@@ -244,5 +244,31 @@ test("explicit null limits and newline task IDs are rejected", () => {
   assert.throws(() =>
     parseConfig({ schema_version: 1, checks: [], limits: null }),
   );
+  assert.throws(() =>
+    parseConfig({
+      schema_version: 3,
+      checks: [],
+      policy: { editable_paths: ["src"], protected_paths: ["acceptance"] },
+      compose: {
+        files: ["compose.yaml"],
+        services: ["api"],
+        test_service: "e2e",
+        timeout_seconds: null,
+      },
+    }),
+  );
   assert.throws(() => parseTask({ ...TASK, id: "demo\n" }));
+});
+
+test("snapshotCandidate rejects tracked directory replaced with symlink", async (t) => {
+  const { rmSync, symlinkSync } = await import("node:fs");
+  const r = repo(t);
+  const w = prepareWorkspace(r.path, TASK, "one");
+  t.after(() => releaseWorkspace(w));
+  const outside = join(r.root, "outside");
+  mkdirSync(outside);
+  writeFileSync(join(outside, "a"), "escaped");
+  rmSync(join(w.path, "src"), { recursive: true, force: true });
+  symlinkSync(outside, join(w.path, "src"));
+  assert.throws(() => snapshotCandidate(w), /symlink parent/);
 });

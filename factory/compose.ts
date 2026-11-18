@@ -1,10 +1,83 @@
 import { randomUUID, createHash } from "node:crypto";
-import { join } from "node:path";
-import { readFileSync, lstatSync, writeFileSync, mkdirSync } from "node:fs";
+import { join, resolve, relative, isAbsolute } from "node:path";
+import {
+  readFileSync,
+  lstatSync,
+  realpathSync,
+  writeFileSync,
+  mkdirSync,
+} from "node:fs";
 import type { Config } from "./models.js";
 import { runProcess, Interrupted } from "./process.js";
 import { verify, type VerificationResult } from "./verify.js";
 import { snapshotCandidate, type Workspace } from "./workspace.js";
+
+function assertInsideWorktree(
+  realRoot: string,
+  candidatePath: string,
+  label: string,
+): void {
+  const resolved = realpathSync(resolve(realRoot, candidatePath));
+  const rel = relative(realRoot, resolved);
+  if (rel === ".." || rel.startsWith("../") || isAbsolute(rel)) {
+    throw new Error(`Compose ${label} escapes worktree: ${candidatePath}`);
+  }
+  const relParts = rel.split("/").filter(Boolean);
+  for (let i = 1; i <= relParts.length; i++) {
+    if (lstatSync(join(realRoot, ...relParts.slice(0, i))).isSymbolicLink()) {
+      throw new Error(`Compose ${label} uses symlink: ${candidatePath}`);
+    }
+  }
+}
+
+function assertSafeRepoFile(
+  worktree: string,
+  realRoot: string,
+  relPath: string,
+  label: string,
+): void {
+  const parts = relPath.split("/").filter(Boolean);
+  for (let i = 1; i <= parts.length; i++) {
+    if (lstatSync(join(worktree, ...parts.slice(0, i))).isSymbolicLink()) {
+      throw new Error(`${label} must not traverse symlinks: ${relPath}`);
+    }
+  }
+  const full = join(worktree, relPath);
+  if (!lstatSync(full).isFile()) {
+    throw new Error(`${label} must be a regular file: ${relPath}`);
+  }
+  const realFile = realpathSync(full);
+  const rel = relative(realRoot, realFile);
+  if (rel === ".." || rel.startsWith("../") || isAbsolute(rel)) {
+    throw new Error(`${label} escapes worktree: ${relPath}`);
+  }
+}
+
+function nonExemptHostContainers(
+  psOutput: string,
+  project: string,
+): Set<string> {
+  const out = new Set<string>();
+  for (const rawLine of psOutput.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    const [id = "", name = "", composeProj = ""] = line.split("\t");
+    const label = composeProj.trim();
+    const cname = name.trim();
+    const target = label || cname;
+    if (
+      label === project ||
+      cname.startsWith(`${project}-`) ||
+      /^factory-/.test(target) ||
+      /-[0-9a-f]{8}$/.test(target) ||
+      /-preview$/.test(target)
+    ) {
+      continue;
+    }
+    out.add(`${id}:${cname}`);
+  }
+  return out;
+}
 
 /** Trusted host runner. Compose definitions are reviewed executable configuration. */
 export async function verifyProject(
@@ -31,6 +104,7 @@ export async function verifyProject(
   let interruption: Interrupted | undefined;
   let reason = "Checks passed";
   let passed = false;
+  let hostContainersBefore: Set<string> | undefined;
   const step = async (name: string, argv: string[], cleanup = false) => {
     const seconds = cleanup
       ? 30
@@ -49,9 +123,9 @@ export async function verifyProject(
     return readFileSync(join(r.log_dir, "stdout.log"), "utf8");
   };
   try {
+    const realRoot = realpathSync(w.path);
     for (const f of c.files)
-      if (!lstatSync(join(w.path, f)).isFile())
-        throw new Error(`Compose file must be a regular file: ${f}`);
+      assertSafeRepoFile(w.path, realRoot, f, "Compose file");
     await step("version", [docker, "compose", "version"]);
     await step("daemon", [docker, "info", "--format", "{{.ServerVersion}}"]);
     const resolved = JSON.parse(
@@ -69,9 +143,55 @@ export async function verifyProject(
         service.network_mode ||
         service.pid ||
         service.ipc ||
-        service.devices
+        service.uts ||
+        service.cgroup ||
+        service.userns_mode ||
+        service.devices ||
+        (Array.isArray(service.cap_add) && service.cap_add.length > 0) ||
+        (Array.isArray(service.security_opt) &&
+          service.security_opt.length > 0) ||
+        (Array.isArray(service.volumes_from) &&
+          service.volumes_from.length > 0) ||
+        service.env_file
       )
         throw new Error(`Unsafe shared/privileged Compose service: ${name}`);
+      if (service.build && typeof service.build === "object") {
+        const buildObj = service.build as {
+          context?: string;
+          dockerfile?: string;
+          dockerfile_inline?: string;
+          additional_contexts?: Record<string, string>;
+        };
+        const ctxDir = buildObj.context ?? ".";
+        assertInsideWorktree(
+          realRoot,
+          resolve(w.path, ctxDir),
+          `build.context (${name})`,
+        );
+        if (buildObj.dockerfile && !buildObj.dockerfile_inline) {
+          assertInsideWorktree(
+            realRoot,
+            resolve(resolve(w.path, ctxDir), buildObj.dockerfile),
+            `build.dockerfile (${name})`,
+          );
+        }
+        for (const [ctxName, ctxVal] of Object.entries(
+          buildObj.additional_contexts ?? {},
+        )) {
+          if (
+            typeof ctxVal === "string" &&
+            !/^(?:service:|target:|docker-image:\/\/|https?:\/\/|oci-layout:\/\/)/.test(
+              ctxVal,
+            )
+          ) {
+            assertInsideWorktree(
+              realRoot,
+              resolve(w.path, ctxVal),
+              `build.additional_contexts.${ctxName} (${name})`,
+            );
+          }
+        }
+      }
       for (const port of service.ports ?? [])
         if (port.published && String(port.published) !== "0")
           throw new Error(`Use dynamically allocated ports: ${name}`);
@@ -93,6 +213,17 @@ export async function verifyProject(
           (resource.name && !resource.name.startsWith(project + "_"))
         )
           throw new Error(`Shared Compose ${category} are not allowed`);
+    for (const category of ["secrets", "configs"])
+      for (const resource of Object.values(resolved[category] ?? {}) as any[]) {
+        if (resource.external)
+          throw new Error(`External Compose ${category} are not allowed`);
+        if (typeof resource.file === "string")
+          assertInsideWorktree(
+            realRoot,
+            resolve(w.path, resource.file),
+            `${category}.file`,
+          );
+      }
     for (const name of [...c.services, c.test_service])
       if (!resolved.services?.[name])
         throw new Error(`Missing Compose service: ${name}`);
@@ -117,6 +248,16 @@ export async function verifyProject(
       "--file",
       frozen,
     ];
+    hostContainersBefore = nonExemptHostContainers(
+      await step("ps-before", [
+        docker,
+        "ps",
+        "-a",
+        "--format",
+        '{{.ID}}\t{{.Names}}\t{{.Label "com.docker.compose.project"}}',
+      ]),
+      project,
+    );
     await step("build", [
       ...prefix,
       "build",
@@ -179,6 +320,29 @@ export async function verifyProject(
           ],
           true,
         );
+        if (hostContainersBefore && !interruption) {
+          const hostContainersAfter = nonExemptHostContainers(
+            await step(
+              "ps-after",
+              [
+                docker,
+                "ps",
+                "-a",
+                "--format",
+                '{{.ID}}\t{{.Names}}\t{{.Label "com.docker.compose.project"}}',
+              ],
+              true,
+            ),
+            project,
+          );
+          const changed =
+            hostContainersBefore.size !== hostContainersAfter.size ||
+            [...hostContainersBefore].some((x) => !hostContainersAfter.has(x));
+          if (changed) {
+            passed = false;
+            reason += "; unrelated host containers changed";
+          }
+        }
       } catch (e) {
         passed = false;
         reason += `; cleanup failed: ${e instanceof Error ? e.message : e}`;

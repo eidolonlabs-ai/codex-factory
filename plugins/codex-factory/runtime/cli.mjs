@@ -1960,7 +1960,13 @@ var require_saxes = __commonJS({
 
 // factory/orchestrate.ts
 import { randomUUID as randomUUID6 } from "node:crypto";
-import { mkdirSync as mkdirSync8 } from "node:fs";
+import {
+  closeSync as closeSync6,
+  mkdirSync as mkdirSync8,
+  openSync as openSync6,
+  unlinkSync as unlinkSync3,
+  writeFileSync as writeFileSync7
+} from "node:fs";
 import { join as join9 } from "node:path";
 
 // factory/models.ts
@@ -2019,8 +2025,10 @@ function classifyChanges(paths, allowed, policy) {
       "yarn.lock",
       "pnpm-lock.yaml",
       "AGENTS.md",
-      "factory.json"
-    ].includes(basename(path)) || /^tsconfig(?:\..+)?\.json$/.test(basename(path)) || path.split("/").some((p) => [".agents", ".codex", ".github", ".git"].includes(p)));
+      "factory.json",
+      "Dockerfile",
+      ".dockerignore"
+    ].includes(basename(path)) || /^Dockerfile\..+$/.test(basename(path)) || /^tsconfig(?:\..+)?\.json$/.test(basename(path)) || path.split("/").some((p) => [".agents", ".codex", ".github", ".git"].includes(p)));
     if (nestedControl || policy.protected_paths.some((p) => within(path, p)))
       reasons.push("protected change needs human review");
     return reasons.map((reason) => ({
@@ -2106,7 +2114,8 @@ function parseConfig(data) {
     for (const s of [...data.compose.services, data.compose.test_service])
       if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(s))
         throw new Error("Invalid Compose service");
-    positive(data.compose.timeout_seconds ?? 600);
+    const composeTimeout = data.compose.timeout_seconds === void 0 ? 600 : data.compose.timeout_seconds;
+    positive(composeTimeout);
   } else if (data.compose !== void 0)
     throw new Error("Compose requires version 3");
   const checks = data.checks.map((c) => {
@@ -2130,7 +2139,7 @@ function parseConfig(data) {
     ...data.schema_version === 3 ? {
       compose: {
         ...data.compose,
-        timeout_seconds: data.compose.timeout_seconds ?? 600
+        timeout_seconds: data.compose.timeout_seconds === void 0 ? 600 : data.compose.timeout_seconds
       }
     } : {},
     checks,
@@ -2309,7 +2318,20 @@ function snapshotCandidate(w) {
       git(w.path, "ls-files", "-c", "-o", "--exclude-standard", "-z").split("\0").filter(Boolean)
     )
   ].sort();
+  const checkedDirs = /* @__PURE__ */ new Set();
   for (const name of files) {
+    const parts = name.split("/");
+    for (let i2 = 1; i2 < parts.length; i2++) {
+      const prefix = parts.slice(0, i2).join("/");
+      if (checkedDirs.has(prefix)) continue;
+      try {
+        if (lstatSync(join(w.path, prefix)).isSymbolicLink())
+          throw new Error(`Unsafe symlink parent in candidate: ${name}`);
+        checkedDirs.add(prefix);
+      } catch (e) {
+        if (e.code !== "ENOENT") throw e;
+      }
+    }
     const p = join(w.path, name);
     h.update(name).update("\0");
     let stat;
@@ -2366,11 +2388,12 @@ var InterruptScope = class {
     process.off("SIGTERM", this.handler);
   }
 };
-function killGroup(pid, signal) {
+function killGroup(pid, signal, allowEperm = false) {
   try {
     process.kill(-pid, signal);
   } catch (e) {
-    if (e.code !== "ESRCH") throw e;
+    const code = e.code;
+    if (code !== "ESRCH" && !(allowEperm && code === "EPERM")) throw e;
   }
 }
 async function runProcess(argv, cwd, seconds, log_dir, stdin = "", envOverrides = {}) {
@@ -2406,11 +2429,11 @@ async function runProcess(argv, cwd, seconds, log_dir, stdin = "", envOverrides 
   process.on("SIGTERM", interrupt);
   try {
     const result = await new Promise(
-      (resolve5) => {
-        child.once("error", (e) => resolve5({ code: 127, error: e.message }));
+      (resolve6) => {
+        child.once("error", (e) => resolve6({ code: 127, error: e.message }));
         child.once(
           "exit",
-          (code, signal) => resolve5({
+          (code, signal) => resolve6({
             code: code ?? (signal ? -constants.signals[signal] : -1),
             error: null
           })
@@ -2425,8 +2448,8 @@ async function runProcess(argv, cwd, seconds, log_dir, stdin = "", envOverrides 
       }
     );
     if (child.pid) {
-      killGroup(child.pid, "SIGTERM");
-      killGroup(child.pid, "SIGKILL");
+      killGroup(child.pid, "SIGTERM", true);
+      killGroup(child.pid, "SIGKILL", true);
     }
     if (result.error) writeFileSync2(err2, result.error);
     if (interrupted) throw new Interrupted();
@@ -2471,16 +2494,23 @@ import {
   openSync as openSync4,
   closeSync as closeSync4,
   unlinkSync as unlinkSync2,
-  realpathSync,
+  rmSync as rmSync3,
+  realpathSync as realpathSync2,
   appendFileSync,
   lstatSync as lstatSync4
 } from "node:fs";
-import { join as join7, resolve, relative } from "node:path";
+import { join as join7, resolve as resolve2, relative as relative2 } from "node:path";
 
 // factory/compose.ts
 import { randomUUID as randomUUID2, createHash as createHash4 } from "node:crypto";
-import { join as join4 } from "node:path";
-import { readFileSync as readFileSync3, lstatSync as lstatSync3, writeFileSync as writeFileSync3, mkdirSync as mkdirSync3 } from "node:fs";
+import { join as join4, resolve, relative, isAbsolute } from "node:path";
+import {
+  readFileSync as readFileSync3,
+  lstatSync as lstatSync3,
+  realpathSync,
+  writeFileSync as writeFileSync3,
+  mkdirSync as mkdirSync3
+} from "node:fs";
 
 // factory/verify.ts
 import { randomUUID } from "node:crypto";
@@ -2566,6 +2596,52 @@ async function verify(w, checks, deadline) {
 }
 
 // factory/compose.ts
+function assertInsideWorktree(realRoot, candidatePath, label) {
+  const resolved = realpathSync(resolve(realRoot, candidatePath));
+  const rel = relative(realRoot, resolved);
+  if (rel === ".." || rel.startsWith("../") || isAbsolute(rel)) {
+    throw new Error(`Compose ${label} escapes worktree: ${candidatePath}`);
+  }
+  const relParts = rel.split("/").filter(Boolean);
+  for (let i2 = 1; i2 <= relParts.length; i2++) {
+    if (lstatSync3(join4(realRoot, ...relParts.slice(0, i2))).isSymbolicLink()) {
+      throw new Error(`Compose ${label} uses symlink: ${candidatePath}`);
+    }
+  }
+}
+function assertSafeRepoFile(worktree, realRoot, relPath, label) {
+  const parts = relPath.split("/").filter(Boolean);
+  for (let i2 = 1; i2 <= parts.length; i2++) {
+    if (lstatSync3(join4(worktree, ...parts.slice(0, i2))).isSymbolicLink()) {
+      throw new Error(`${label} must not traverse symlinks: ${relPath}`);
+    }
+  }
+  const full = join4(worktree, relPath);
+  if (!lstatSync3(full).isFile()) {
+    throw new Error(`${label} must be a regular file: ${relPath}`);
+  }
+  const realFile = realpathSync(full);
+  const rel = relative(realRoot, realFile);
+  if (rel === ".." || rel.startsWith("../") || isAbsolute(rel)) {
+    throw new Error(`${label} escapes worktree: ${relPath}`);
+  }
+}
+function nonExemptHostContainers(psOutput, project) {
+  const out = /* @__PURE__ */ new Set();
+  for (const rawLine of psOutput.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    const [id = "", name = "", composeProj = ""] = line.split("	");
+    const label = composeProj.trim();
+    const cname = name.trim();
+    const target = label || cname;
+    if (label === project || cname.startsWith(`${project}-`) || /^factory-/.test(target) || /-[0-9a-f]{8}$/.test(target) || /-preview$/.test(target)) {
+      continue;
+    }
+    out.add(`${id}:${cname}`);
+  }
+  return out;
+}
 async function verifyProject(w, config, deadline, docker = "docker") {
   if (config.schema_version !== 3) return verify(w, config.checks, deadline);
   const c = config.compose;
@@ -2585,6 +2661,7 @@ async function verifyProject(w, config, deadline, docker = "docker") {
   let interruption;
   let reason = "Checks passed";
   let passed = false;
+  let hostContainersBefore;
   const step = async (name, argv, cleanup = false) => {
     const seconds = cleanup ? 30 : Math.min(c.timeout_seconds, (deadline - performance.now()) / 1e3);
     if (seconds <= 0)
@@ -2601,17 +2678,46 @@ async function verifyProject(w, config, deadline, docker = "docker") {
     return readFileSync3(join4(r.log_dir, "stdout.log"), "utf8");
   };
   try {
+    const realRoot = realpathSync(w.path);
     for (const f of c.files)
-      if (!lstatSync3(join4(w.path, f)).isFile())
-        throw new Error(`Compose file must be a regular file: ${f}`);
+      assertSafeRepoFile(w.path, realRoot, f, "Compose file");
     await step("version", [docker, "compose", "version"]);
     await step("daemon", [docker, "info", "--format", "{{.ServerVersion}}"]);
     const resolved = JSON.parse(
       await step("config", [...prefix, "config", "--format", "json"])
     );
     for (const [name, service] of Object.entries(resolved.services ?? {})) {
-      if (service.build && service.image || service.container_name || service.privileged || service.network_mode || service.pid || service.ipc || service.devices)
+      if (service.build && service.image || service.container_name || service.privileged || service.network_mode || service.pid || service.ipc || service.uts || service.cgroup || service.userns_mode || service.devices || Array.isArray(service.cap_add) && service.cap_add.length > 0 || Array.isArray(service.security_opt) && service.security_opt.length > 0 || Array.isArray(service.volumes_from) && service.volumes_from.length > 0 || service.env_file)
         throw new Error(`Unsafe shared/privileged Compose service: ${name}`);
+      if (service.build && typeof service.build === "object") {
+        const buildObj = service.build;
+        const ctxDir = buildObj.context ?? ".";
+        assertInsideWorktree(
+          realRoot,
+          resolve(w.path, ctxDir),
+          `build.context (${name})`
+        );
+        if (buildObj.dockerfile && !buildObj.dockerfile_inline) {
+          assertInsideWorktree(
+            realRoot,
+            resolve(resolve(w.path, ctxDir), buildObj.dockerfile),
+            `build.dockerfile (${name})`
+          );
+        }
+        for (const [ctxName, ctxVal] of Object.entries(
+          buildObj.additional_contexts ?? {}
+        )) {
+          if (typeof ctxVal === "string" && !/^(?:service:|target:|docker-image:\/\/|https?:\/\/|oci-layout:\/\/)/.test(
+            ctxVal
+          )) {
+            assertInsideWorktree(
+              realRoot,
+              resolve(w.path, ctxVal),
+              `build.additional_contexts.${ctxName} (${name})`
+            );
+          }
+        }
+      }
       for (const port of service.ports ?? [])
         if (port.published && String(port.published) !== "0")
           throw new Error(`Use dynamically allocated ports: ${name}`);
@@ -2625,6 +2731,17 @@ async function verifyProject(w, config, deadline, docker = "docker") {
       for (const resource of Object.values(resolved[category] ?? {}))
         if (resource.external || resource.driver_opts || resource.driver && !["local", "bridge"].includes(resource.driver) || resource.name && !resource.name.startsWith(project + "_"))
           throw new Error(`Shared Compose ${category} are not allowed`);
+    for (const category of ["secrets", "configs"])
+      for (const resource of Object.values(resolved[category] ?? {})) {
+        if (resource.external)
+          throw new Error(`External Compose ${category} are not allowed`);
+        if (typeof resource.file === "string")
+          assertInsideWorktree(
+            realRoot,
+            resolve(w.path, resource.file),
+            `${category}.file`
+          );
+      }
     for (const name of [...c.services, c.test_service])
       if (!resolved.services?.[name])
         throw new Error(`Missing Compose service: ${name}`);
@@ -2646,6 +2763,16 @@ async function verifyProject(w, config, deadline, docker = "docker") {
       "--file",
       frozen
     ];
+    hostContainersBefore = nonExemptHostContainers(
+      await step("ps-before", [
+        docker,
+        "ps",
+        "-a",
+        "--format",
+        '{{.ID}}	{{.Names}}	{{.Label "com.docker.compose.project"}}'
+      ]),
+      project
+    );
     await step("build", [
       ...prefix,
       "build",
@@ -2705,6 +2832,27 @@ async function verifyProject(w, config, deadline, docker = "docker") {
           ],
           true
         );
+        if (hostContainersBefore && !interruption) {
+          const hostContainersAfter = nonExemptHostContainers(
+            await step(
+              "ps-after",
+              [
+                docker,
+                "ps",
+                "-a",
+                "--format",
+                '{{.ID}}	{{.Names}}	{{.Label "com.docker.compose.project"}}'
+              ],
+              true
+            ),
+            project
+          );
+          const changed = hostContainersBefore.size !== hostContainersAfter.size || [...hostContainersBefore].some((x2) => !hostContainersAfter.has(x2));
+          if (changed) {
+            passed = false;
+            reason += "; unrelated host containers changed";
+          }
+        }
       } catch (e) {
         passed = false;
         reason += `; cleanup failed: ${e instanceof Error ? e.message : e}`;
@@ -2896,7 +3044,7 @@ function validateDisposition(data, candidate) {
 
 // factory/hooks.ts
 function hookDirectory(repo) {
-  const root = realpathSync(git(repo, "rev-parse", "--show-toplevel"));
+  const root = realpathSync2(git(repo, "rev-parse", "--show-toplevel"));
   return join7(
     storage(root),
     "hooks",
@@ -2925,7 +3073,7 @@ function activate(repo, task, config, acceptance) {
     );
   const state = {
     version: 1,
-    workspace: realpathSync(repo),
+    workspace: realpathSync2(repo),
     task,
     config,
     acceptance,
@@ -2960,7 +3108,7 @@ function managedContext(repo, task, config) {
     flag: "wx",
     mode: 384
   });
-  return Object.assign(() => unlinkSync2(p), { token });
+  return Object.assign(() => rmSync3(p, { force: true }), { token });
 }
 
 // factory/runner.ts
@@ -3243,6 +3391,8 @@ function parsePlan(value) {
         throw new Error("Overlapping ownership requires a dependency");
     }
   const task = parseTask(value.task);
+  if (ids.includes(task.id))
+    throw new Error("Plan task ID cannot collide with a node task ID");
   for (const n of nodes)
     if (n.task.allowed_paths.some(
       (p) => !task.allowed_paths.some((q) => within(p, q))
@@ -3275,16 +3425,45 @@ async function orchestrate(repo, plan, config, codex = "codex") {
       );
   }
   const id = randomUUID6().replaceAll("-", "");
-  const run_dir = join9(storage(repo), "orchestrations", id), path = join9(storage(repo), "integration", id);
-  mkdirSync8(run_dir, { recursive: true });
-  mkdirSync8(join9(path, ".."), { recursive: true });
-  git(repo, "worktree", "add", "-b", `factory/integration/${id}`, path, base);
+  const home = storage(repo);
+  for (const name of ["locks", "orchestrations", "integration"])
+    mkdirSync8(join9(home, name), { recursive: true });
+  const lock = join9(home, "locks", plan.task.id);
+  let lockFd;
+  try {
+    lockFd = openSync6(lock, "wx", 384);
+  } catch (e) {
+    if (e.code === "EEXIST")
+      throw new Error(
+        `Task locked: ${lock}; inspect before removing stale lock`
+      );
+    throw e;
+  }
+  try {
+    writeFileSync7(lockFd, `pid=${process.pid} orchestration=${id}
+`);
+  } finally {
+    closeSync6(lockFd);
+  }
+  const run_dir = join9(home, "orchestrations", id), path = join9(home, "integration", id);
+  try {
+    mkdirSync8(run_dir, { recursive: true });
+    git(repo, "worktree", "add", "-b", `factory/integration/${id}`, path, base);
+  } catch (e) {
+    try {
+      unlinkSync3(lock);
+    } catch (unlinkErr) {
+      if (unlinkErr.code !== "ENOENT")
+        throw unlinkErr;
+    }
+    throw e;
+  }
   const w = {
     path,
     run_dir,
     base,
     branch: `factory/integration/${id}`,
-    lock: ""
+    lock
   };
   const result = {
     run_id: id,
@@ -3293,16 +3472,20 @@ async function orchestrate(repo, plan, config, codex = "codex") {
     workspace: path,
     base,
     run_dir,
+    lock,
     workers: [],
     schema_version: 1,
     task: plan.task
   };
   const save2 = () => writeResult(run_dir, result);
   save2();
+  const interrupts = new InterruptScope();
   const deadline = performance.now() + config.limits.run_seconds * 1e3;
   const done = /* @__PURE__ */ new Set();
   try {
+    await interrupts.checkpoint();
     while (done.size < plan.nodes.length) {
+      await interrupts.checkpoint();
       if (performance.now() >= deadline)
         throw new Error("Orchestration deadline exhausted");
       const wave = plan.nodes.filter(
@@ -3315,6 +3498,11 @@ async function orchestrate(repo, plan, config, codex = "codex") {
       });
       const settled = await Promise.allSettled(
         wave.map(async (n) => {
+          const remainingSeconds = Math.floor(
+            (deadline - performance.now()) / 1e3
+          );
+          if (remainingSeconds < 1)
+            throw new Error("Orchestration deadline exhausted");
           const task = { ...n.task, base_ref: waveBase };
           const acceptance = {
             ...n.acceptance,
@@ -3329,10 +3517,7 @@ async function orchestrate(repo, plan, config, codex = "codex") {
               ...config,
               limits: {
                 ...config.limits,
-                run_seconds: Math.max(
-                  1,
-                  Math.floor((deadline - performance.now()) / 1e3)
-                )
+                run_seconds: remainingSeconds
               }
             },
             codex,
@@ -3348,11 +3533,15 @@ async function orchestrate(repo, plan, config, codex = "codex") {
       );
       result.workers.push(...outcomes);
       save2();
+      await interrupts.checkpoint();
+      if (outcomes.some((r) => r.status === "interrupted"))
+        throw new Interrupted();
       if (settled.some((r) => r.status === "rejected") || outcomes.some((r) => r.status !== "ready_for_human_review"))
         throw new Error(
           "Worker blocked or failed; retained worktrees require inspection"
         );
       for (const [index, r] of outcomes.entries()) {
+        await interrupts.checkpoint();
         if (!r.review?.snapshot_commit)
           throw new Error("Missing reviewed worker snapshot");
         git(path, "cherry-pick", "--no-commit", r.review.snapshot_commit);
@@ -3370,6 +3559,7 @@ async function orchestrate(repo, plan, config, codex = "codex") {
         done.add(wave[index].task.id);
       }
     }
+    await interrupts.checkpoint();
     result.status = "verifying";
     save2();
     const violations = scopeViolations(
@@ -3379,6 +3569,7 @@ async function orchestrate(repo, plan, config, codex = "codex") {
     );
     if (violations.length) throw new Error(violations.join("; "));
     const verification = await verifyProject(w, config, deadline);
+    await interrupts.checkpoint();
     result.verification = verification;
     if (!verification.passed) throw new Error(verification.reason);
     result.candidate = verification.candidate;
@@ -3409,13 +3600,21 @@ async function orchestrate(repo, plan, config, codex = "codex") {
         }))
       }
     );
+    await interrupts.checkpoint();
     if (!result.review.collected)
       throw new Error("Integrated review was not collected");
     result.status = result.missing_evidence.length ? "awaiting_manual_evidence" : "ready_for_human_review";
     result.reason = "Integrated checks and independent review collected; worker and integration review findings require owner disposition. Main unchanged.";
   } catch (e) {
-    result.status = "blocked";
+    result.status = e instanceof Interrupted ? "interrupted" : "blocked";
     result.reason = e instanceof Error ? e.message : String(e);
+  } finally {
+    interrupts.dispose();
+    try {
+      unlinkSync3(lock);
+    } catch (e) {
+      if (e.code !== "ENOENT") throw e;
+    }
   }
   save2();
   return result;
@@ -3423,8 +3622,8 @@ async function orchestrate(repo, plan, config, codex = "codex") {
 
 // factory/cli.ts
 import { parseArgs } from "node:util";
-import { resolve as resolve4, join as join13 } from "node:path";
-import { readFileSync as readFileSync9 } from "node:fs";
+import { resolve as resolve5, join as join13, dirname } from "node:path";
+import { mkdirSync as mkdirSync10, readFileSync as readFileSync9, writeFileSync as writeFileSync9 } from "node:fs";
 import { randomUUID as randomUUID8 } from "node:crypto";
 
 // factory/doctor.ts
@@ -3498,12 +3697,12 @@ function doctor(repo, codex = "codex", mode = "managed") {
 import { createHash as createHash6, randomUUID as randomUUID7 } from "node:crypto";
 import {
   readFileSync as readFileSync7,
-  writeFileSync as writeFileSync7,
+  writeFileSync as writeFileSync8,
   mkdirSync as mkdirSync9,
   readdirSync,
   lstatSync as lstatSync5
 } from "node:fs";
-import { join as join11, resolve as resolve2, basename as basename3, extname } from "node:path";
+import { join as join11, resolve as resolve3, basename as basename3, extname } from "node:path";
 
 // node_modules/fflate/esm/index.mjs
 import { createRequire } from "module";
@@ -4092,12 +4291,12 @@ function validateReport(data) {
 async function runIntake(source, runs, seconds = 1200, codex = "codex", model) {
   const content = extractSource(source);
   nonempty(content);
-  const id = randomUUID7().replaceAll("-", ""), run_dir = join11(resolve2(runs), id), workspace = join11(run_dir, "workspace");
+  const id = randomUUID7().replaceAll("-", ""), run_dir = join11(resolve3(runs), id), workspace = join11(run_dir, "workspace");
   mkdirSync9(workspace, { recursive: true });
-  writeFileSync7(join11(workspace, "intake.txt"), content);
+  writeFileSync8(join11(workspace, "intake.txt"), content);
   git(workspace, "init", "-b", "intake");
   const schema = join11(run_dir, "intake.schema.json"), final = join11(run_dir, "report.json");
-  writeFileSync7(schema, JSON.stringify(INTAKE_SCHEMA));
+  writeFileSync8(schema, JSON.stringify(INTAKE_SCHEMA));
   const hash = (v) => createHash6("sha256").update(v).digest("hex");
   const result = {
     schema_version: 1,
@@ -4163,19 +4362,19 @@ import {
   lstatSync as lstatSync6,
   readFileSync as readFileSync8,
   readdirSync as readdirSync2,
-  realpathSync as realpathSync2
+  realpathSync as realpathSync3
 } from "node:fs";
 import { join as join12 } from "node:path";
+var RUN_CATEGORIES = [
+  "runs",
+  "intake-runs",
+  "verification",
+  "orchestrations"
+];
 function locateRun(repo, runId) {
   if (!/^[a-f0-9]{32}$/.test(runId)) throw new Error("Invalid run ID");
   const home = storage(repo);
-  for (const kind of [
-    "runs",
-    "intake-runs",
-    "verification",
-    "orchestrations",
-    "orchestrations"
-  ]) {
+  for (const kind of RUN_CATEGORIES) {
     const parent = join12(home, kind), dir = join12(parent, runId);
     if (existsSync2(dir)) {
       if (lstatSync6(parent).isSymbolicLink() || lstatSync6(dir).isSymbolicLink())
@@ -4223,7 +4422,7 @@ function readRunSummary(repo, runId) {
   if (typeof r.workspace === "string") s.workspace = r.workspace;
   if (s.candidate && s.workspace) {
     try {
-      const root = realpathSync2(s.workspace);
+      const root = realpathSync3(s.workspace);
       if (storage(root) !== storage(repo))
         throw new Error("Unexpected workspace");
       s.freshness = snapshotCandidate({ path: root }) === s.candidate ? "current" : "changed";
@@ -4240,9 +4439,13 @@ function readRunSummary(repo, runId) {
     s.blockers.push(
       "Persisted running state is not verified live; inspect controller before recovery"
     );
-  if (["failed", "interrupted", "timed_out", "awaiting_manual_evidence"].includes(
-    s.status
-  ))
+  if ([
+    "blocked",
+    "failed",
+    "interrupted",
+    "timed_out",
+    "awaiting_manual_evidence"
+  ].includes(s.status))
     s.blockers.push(typeof r.reason === "string" ? r.reason : s.status);
   const review = r.review;
   if (r.task && !review)
@@ -4269,17 +4472,14 @@ function readRunSummary(repo, runId) {
 function listRuns(repo) {
   const home = storage(repo);
   const ids = [];
-  for (const kind of [
-    "runs",
-    "intake-runs",
-    "verification",
-    "orchestrations",
-    "orchestrations"
-  ]) {
+  for (const kind of RUN_CATEGORIES) {
     const p = join12(home, kind);
     if (!existsSync2(p) || lstatSync6(p).isSymbolicLink()) continue;
     ids.push(
-      ...readdirSync2(p).filter((id) => /^[a-f0-9]{32}$/.test(id)).slice(-50)
+      ...readdirSync2(p).filter((id) => /^[a-f0-9]{32}$/.test(id)).map((id) => ({
+        id,
+        mtime: lstatSync6(join12(p, id)).mtimeMs
+      })).sort((a, b) => a.mtime - b.mtime || a.id.localeCompare(b.id)).slice(-50).map((x2) => x2.id)
     );
   }
   return [...new Set(ids)].map((id) => readRunSummary(repo, id));
@@ -4312,12 +4512,13 @@ async function main(args = process.argv.slice(2)) {
         model: { type: "string" },
         mode: { type: "string" },
         file: { type: "string" },
+        out: { type: "string" },
         help: { type: "boolean", short: "h" }
       }
     });
     if (values.help) {
       console.log(
-        "Codex factory: orchestrate PLAN | activate TASK --acceptance RECORD | deactivate | hooks-status | doctor | prepare TASK | preflight TASK | intake SOURCE | benchmark | run TASK | verify | review | status RUN_ID | runs | handoff RUN_ID | disposition RUN_ID\nOptions: --repo PATH; --config PATH; --task PATH (verify/review); --acceptance PATH (preflight/run/verify/review); --mode verify|managed (doctor); --file PATH (disposition); --timeout SECONDS --model MODEL (intake/benchmark)"
+        "Codex factory: orchestrate PLAN | activate TASK --acceptance RECORD | deactivate | hooks-status | doctor | prepare TASK | preflight TASK | intake SOURCE | benchmark | run TASK | verify | review | status RUN_ID | runs | handoff RUN_ID | disposition RUN_ID\nOptions: --repo PATH; --config PATH; --task PATH (verify/review); --acceptance PATH (preflight/run/verify/review); --out PATH (prepare); --mode verify|managed (doctor); --file PATH (disposition); --timeout SECONDS --model MODEL (intake/benchmark)"
       );
       return 0;
     }
@@ -4370,27 +4571,31 @@ async function main(args = process.argv.slice(2)) {
       timeout: ["intake", "benchmark"],
       model: ["intake", "benchmark"],
       mode: ["doctor"],
-      file: ["disposition"]
+      file: ["disposition"],
+      out: ["prepare"]
     }))
       if (values[option] && !commands.includes(command))
         throw new Error("Option is not supported for this command");
-    const repo = resolve4(values.repo ?? ".");
+    const repo = resolve5(values.repo ?? ".");
     let result, success;
+    let interrupted = false;
     if (command === "orchestrate") {
-      result = await orchestrate(
+      const r = await orchestrate(
         repo,
-        parsePlan(JSON.parse(readFileSync9(resolve4(arg), "utf8"))),
-        loadConfig(resolve4(values.config ?? join13(repo, "factory.json")))
+        parsePlan(JSON.parse(readFileSync9(resolve5(arg), "utf8"))),
+        loadConfig(resolve5(values.config ?? join13(repo, "factory.json")))
       );
-      success = result.status === "ready_for_human_review";
+      result = r;
+      interrupted = r.status === "interrupted";
+      success = r.status === "ready_for_human_review";
     } else if (command === "activate") {
       if (!values.acceptance)
         throw new Error("Activation requires --acceptance PATH");
       result = activate(
         repo,
-        loadTask(resolve4(arg)),
-        loadConfig(resolve4(values.config ?? join13(repo, "factory.json"))),
-        loadAcceptance(resolve4(values.acceptance))
+        loadTask(resolve5(arg)),
+        loadConfig(resolve5(values.config ?? join13(repo, "factory.json"))),
+        loadAcceptance(resolve5(values.acceptance))
       );
       success = true;
     } else if (command === "deactivate") {
@@ -4412,7 +4617,7 @@ async function main(args = process.argv.slice(2)) {
     } else if (command === "intake" || command === "benchmark") {
       const timeout = values.timeout === void 0 ? 1200 : Number(values.timeout);
       positive(timeout);
-      const source = command === "intake" ? resolve4(arg) : join13(repo, "benchmarks/chronograph/input/original.md");
+      const source = command === "intake" ? resolve5(arg) : join13(repo, "benchmarks/chronograph/input/original.md");
       const r = await runIntake(
         source,
         join13(storage(repo), "intake-runs"),
@@ -4446,7 +4651,7 @@ async function main(args = process.argv.slice(2)) {
       const review = record.review;
       if (!review?.collected) throw new Error("No collected review");
       const d = validateDisposition(
-        JSON.parse(readFileSync9(resolve4(values.file), "utf8")),
+        JSON.parse(readFileSync9(resolve5(values.file), "utf8")),
         summary.candidate
       );
       if (d.decision === "accepted" && (record.status === "awaiting_manual_evidence" || Array.isArray(record.missing_evidence) && record.missing_evidence.length))
@@ -4459,11 +4664,11 @@ async function main(args = process.argv.slice(2)) {
       success = true;
     } else {
       const config = loadConfig(
-        resolve4(values.config ?? join13(repo, "factory.json"))
+        resolve5(values.config ?? join13(repo, "factory.json"))
       );
       const taskPath = ["prepare", "preflight", "run"].includes(command) ? arg : values.task;
-      const task = taskPath ? loadTask(resolve4(taskPath)) : void 0;
-      const acceptance = values.acceptance ? loadAcceptance(resolve4(values.acceptance)) : void 0;
+      const task = taskPath ? loadTask(resolve5(taskPath)) : void 0;
+      const acceptance = values.acceptance ? loadAcceptance(resolve5(values.acceptance)) : void 0;
       if (acceptance && !task) throw new Error("Acceptance requires a task");
       if ((command === "preflight" || command === "run" && config.schema_version !== 1) && !acceptance)
         throw new Error("Provide --acceptance PATH");
@@ -4495,6 +4700,11 @@ async function main(args = process.argv.slice(2)) {
           })),
           manual_evidence: []
         };
+        if (values.out) {
+          const outPath = resolve5(values.out);
+          mkdirSync10(dirname(outPath), { recursive: true });
+          writeFileSync9(outPath, JSON.stringify(result, null, 2) + "\n");
+        }
         success = true;
       } else if (command === "preflight") {
         result = readiness;
@@ -4502,6 +4712,7 @@ async function main(args = process.argv.slice(2)) {
       } else if (command === "run") {
         const r = await runTask(repo, task, config, "codex", acceptance);
         result = r;
+        interrupted = r.status === "interrupted";
         success = r.status === "ready_for_human_review";
       } else {
         if (command === "review" && !task)
@@ -4606,7 +4817,7 @@ async function main(args = process.argv.slice(2)) {
       }
     }
     console.log(JSON.stringify(result, null, 2));
-    return success ? 0 : 1;
+    return interrupted ? 130 : success ? 0 : 1;
   } catch (e) {
     console.error(`error: ${e instanceof Error ? e.message : String(e)}`);
     return e instanceof Interrupted ? 130 : 2;

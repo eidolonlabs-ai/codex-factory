@@ -128,3 +128,19 @@ test("v2 freezes policy and stops worker configuration changes", async (t) => {
   assert.match(result.reason!, /protected/);
   assert.ok(result.policy_sha256);
 });
+
+test("v2 protects nested Dockerfile and .dockerignore inside editable paths", () => {
+  const p = resolvePolicy(cfg());
+  p.editable_paths = ["services"];
+  for (const path of [
+    "services/api/Dockerfile",
+    "services/api/Dockerfile.prod",
+    "services/api/.dockerignore",
+  ])
+    assert.ok(
+      classifyChanges([path], ["services"], p).some((f) =>
+        f.reason.includes("protected"),
+      ),
+      path,
+    );
+});

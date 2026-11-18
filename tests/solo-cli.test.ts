@@ -246,3 +246,23 @@ test("CLI disposition accepts complete current evidence and rejects missing evid
   assert.equal(result.status, 2);
   assert.match(result.stderr, /Candidate changed/);
 });
+
+test("CLI prepare --out writes acceptance record to the target file", (t) => {
+  const r = repo(t);
+  writeFileSync(
+    join(r.path, "factory.json"),
+    JSON.stringify({
+      schema_version: 1,
+      checks: [{ name: "unit", argv: [process.execPath, "-e", "void 0"] }],
+    }),
+  );
+  const taskPath = join(r.root, "task.json");
+  const outPath = join(r.root, "nested/acceptance.json");
+  writeFileSync(taskPath, JSON.stringify(TASK));
+  const res = call(r.path, ["prepare", taskPath, "--out", outPath]);
+  assert.equal(res.status, 0, res.stderr);
+  assert.equal(
+    JSON.parse(readFileSync(outPath, "utf8")).task_sha256,
+    taskDigest(TASK),
+  );
+});

@@ -95,9 +95,13 @@ for (const name of readdirSync(join(root, ".agents/skills")).sort()) {
       "`docs/builder-prompts.md`",
       "`../../references/builder-prompts.md`",
     )
-    .replace(
-      "Maintain `docs/development-state.md` using its template:",
-      "Maintain the project’s `docs/factory/development-state.md` using `../../templates/development-state.md`:",
+    .replaceAll(
+      "Maintain `docs/development-state.md` using its template",
+      "Maintain the project’s `docs/factory/development-state.md` using `../../templates/development-state.md`",
+    )
+    .replaceAll(
+      "`docs/development-state.md`",
+      "`docs/factory/development-state.md`",
     );
   if (name === "factory-pipeline")
     text +=

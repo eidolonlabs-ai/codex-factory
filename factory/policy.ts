@@ -81,7 +81,10 @@ export function classifyChanges(
         "pnpm-lock.yaml",
         "AGENTS.md",
         "factory.json",
+        "Dockerfile",
+        ".dockerignore",
       ].includes(basename(path)) ||
+        /^Dockerfile\..+$/.test(basename(path)) ||
         /^tsconfig(?:\..+)?\.json$/.test(basename(path)) ||
         path
           .split("/")

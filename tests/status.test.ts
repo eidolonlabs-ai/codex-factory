@@ -37,3 +37,16 @@ test("status rejects unsafe IDs and reports incomplete records without deleting 
   assert.equal(s.status, "incomplete");
   assert.match(renderHandoff(s), /inspect/i);
 });
+test("status preserves blocked orchestration reasons", (t) => {
+  const r = repo(t);
+  const id = "c".repeat(32);
+  writeResult(join(storage(r.path), "orchestrations", id), {
+    schema_version: 1,
+    run_id: id,
+    status: "blocked",
+    phase: "orchestration",
+    reason: "Worker blocked or failed; retained worktrees require inspection",
+  });
+  const s = readRunSummary(r.path, id);
+  assert.ok(s.blockers.some((b) => b.includes("Worker blocked or failed")));
+});

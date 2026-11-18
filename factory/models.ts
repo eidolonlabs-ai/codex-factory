@@ -124,7 +124,11 @@ export function parseConfig(data: unknown): Config {
     for (const s of [...data.compose.services, data.compose.test_service])
       if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(s))
         throw new Error("Invalid Compose service");
-    positive(data.compose.timeout_seconds ?? 600);
+    const composeTimeout =
+      (data.compose as Record<string, unknown>).timeout_seconds === undefined
+        ? 600
+        : (data.compose as Record<string, unknown>).timeout_seconds;
+    positive(composeTimeout);
   } else if (data.compose !== undefined)
     throw new Error("Compose requires version 3");
   const checks: Check[] = data.checks.map((c) => {
@@ -152,7 +156,10 @@ export function parseConfig(data: unknown): Config {
           compose: {
             ...(data.compose as object),
             timeout_seconds:
-              (data.compose as Record<string, unknown>).timeout_seconds ?? 600,
+              (data.compose as Record<string, unknown>).timeout_seconds ===
+              undefined
+                ? 600
+                : (data.compose as Record<string, unknown>).timeout_seconds,
           },
         }
       : {}),

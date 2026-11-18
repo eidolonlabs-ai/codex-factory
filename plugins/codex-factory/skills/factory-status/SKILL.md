@@ -26,4 +26,4 @@ node "<PLUGIN_ROOT>/scripts/factory.mjs" handoff RUN_ID
 Summarize truthfully for the owner:
 - Active interactive task or managed run ID, base commit, and `allowed_paths`.
 - Whether check/verification evidence matches the current candidate digest (stale or exhausted Stop-gate attempts are **unverified**, never complete).
-- Remaining live/browser checks, review findings, and `docs/development-state.md` next owner action.
+- Remaining live/browser checks, review findings, and `docs/factory/development-state.md` next owner action.

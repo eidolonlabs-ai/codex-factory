@@ -334,4 +334,196 @@ test("guard passes all shared contract/guard-cases.json vectors and escalates as
   );
   assert.equal(guardCommand("git push origin main") !== undefined, true);
   assert.equal(guardCommand("git rebase -i HEAD~3") !== undefined, true);
+  assert.equal(guardCommand("rm -rf dist"), undefined);
+  assert.equal(guardCommand('git commit -m "avoid --no-verify"'), undefined);
+  assert.equal(guardCommand("echo ok > /tmp/.env"), undefined);
+  assert.equal(guardCommand("echo ok > /tmp/dev.pem"), undefined);
+  for (const [cmd, expected] of [
+    ['eval "rm -rf /"', "deny"],
+    ["{ rm -rf /; }", "deny"],
+    ["echo x | xargs rm -rf /", "deny"],
+    ["(cd /tmp) && rm -rf acceptance", "deny"],
+    ["cd /tmp && echo x > .env", "allow"],
+    ['echo x > "$PWD/.git/config"', "deny"],
+    ['perl -pi -e"s/a/b/" .env', "deny"],
+    ["ln -s /tmp/.env", "deny"],
+  ] as const) {
+    assert.equal(
+      decideGuard({
+        tool: "shell",
+        input: cmd,
+        root: suite.context.root,
+        cwd: suite.context.root,
+        ctx: { ...ctx, frozen: [...ctx.frozen, "acceptance"] },
+      }),
+      expected,
+      cmd,
+    );
+  }
+});
+
+test("PreToolUse enforces scope for Bash/Edit/Write without parsing apply_patch diffs as shell", async (t) => {
+  const { mkdirSync, symlinkSync } = await import("node:fs");
+  const r = repo(t);
+  mkdirSync(join(r.path, "acceptance"), { recursive: true });
+  writeFileSync(join(r.path, "acceptance/e2e.mjs"), "process.exit(0);\n");
+  writeFileSync(join(r.path, "compose.yaml"), "services: {}\n");
+  writeFileSync(join(r.path, "factory.json"), JSON.stringify(raw));
+  git(r.path, "add", ".");
+  git(r.path, "commit", "-m", "init");
+  const acceptance = {
+    schema_version: 1 as const,
+    task_sha256: taskDigest(TASK),
+    base: git(r.path, "rev-parse", "HEAD"),
+    unresolved_decisions: [],
+    criteria: [
+      {
+        id: "one",
+        criterion: TASK.acceptance_criteria[0]!,
+        checks: ["compose:e2e"],
+        manual: [],
+      },
+    ],
+    manual_evidence: [],
+  };
+  activate(r.path, TASK, parseConfig(raw), acceptance);
+
+  assert.deepEqual(
+    await handleHook({
+      cwd: r.path,
+      hook_event_name: "PreToolUse",
+      tool_name: "apply_patch",
+      tool_input: {
+        command:
+          "*** Begin Patch\n*** Update File: src/a\n@@\n-base\n+// Avoid git commit --no-verify and > .env\n*** End Patch",
+      },
+    }),
+    {},
+  );
+  assert.deepEqual(
+    await handleHook({
+      cwd: r.path,
+      hook_event_name: "PreToolUse",
+      tool_name: "Edit",
+      tool_input: { file_path: "src/a", old_string: "base", new_string: "ok" },
+    }),
+    {},
+  );
+  assert.match(
+    JSON.stringify(
+      await handleHook({
+        cwd: r.path,
+        hook_event_name: "PreToolUse",
+        tool_name: "Write",
+        tool_input: { path: "acceptance/e2e.mjs", content: "bad" },
+      }),
+    ),
+    /deny/,
+  );
+  assert.match(
+    JSON.stringify(
+      await handleHook({
+        cwd: r.path,
+        hook_event_name: "PreToolUse",
+        tool_name: "Bash",
+        tool_input: { command: "echo pwn > acceptance/e2e.mjs" },
+      }),
+    ),
+    /deny/,
+  );
+  assert.match(
+    JSON.stringify(
+      await handleHook({
+        cwd: r.path,
+        hook_event_name: "PreToolUse",
+        tool_name: "Bash",
+        tool_input: { command: "echo pwn > outside.ts" },
+      }),
+    ),
+    /deny/,
+  );
+  assert.deepEqual(
+    await handleHook({
+      cwd: r.path,
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      tool_input: { command: "echo ok > src/a && rm -rf dist" },
+    }),
+    {},
+  );
+  symlinkSync(r.root, join(r.path, "src/link"));
+  assert.match(
+    JSON.stringify(
+      await handleHook({
+        cwd: r.path,
+        hook_event_name: "PreToolUse",
+        tool_name: "Bash",
+        tool_input: { command: "echo bad > src/link/escape" },
+      }),
+    ),
+    /deny/,
+  );
+});
+
+test("Stop with pending manual criteria preserves candidate, runs review, and awaits manual evidence", async (t) => {
+  const { mkdirSync, symlinkSync } = await import("node:fs");
+  const { fake } = await import("./helpers.js");
+  const { readRunRecord } = await import("../factory/status.js");
+  const r = repo(t);
+  writeFileSync(join(r.path, "compose.yaml"), "services: {}\n");
+  writeFileSync(join(r.path, "factory.json"), JSON.stringify(raw));
+  git(r.path, "add", ".");
+  git(r.path, "commit", "-m", "config");
+  const acceptance = {
+    schema_version: 1 as const,
+    task_sha256: taskDigest(TASK),
+    base: git(r.path, "rev-parse", "HEAD"),
+    unresolved_decisions: [],
+    criteria: [
+      {
+        id: "one",
+        criterion: TASK.acceptance_criteria[0]!,
+        checks: ["compose:e2e"],
+        manual: ["Observe UI"],
+      },
+    ],
+    manual_evidence: [],
+  };
+  activate(r.path, TASK, parseConfig(raw), acceptance);
+  const bin = join(r.root, "bin");
+  mkdirSync(bin);
+  const dockerDir = join(r.root, "docker");
+  mkdirSync(dockerDir);
+  symlinkSync(
+    fake(
+      dockerDir,
+      `if(args.includes('config'))console.log(JSON.stringify({services:{api:{healthcheck:{test:['CMD','true']}},e2e:{}},networks:{},volumes:{}}));`,
+    ),
+    join(bin, "docker"),
+  );
+  const codexDir = join(r.root, "codex");
+  mkdirSync(codexDir);
+  symlinkSync(
+    fake(
+      codexDir,
+      `fs.writeFileSync(args[args.indexOf('--output-last-message')+1],'No findings.');`,
+    ),
+    join(bin, "codex"),
+  );
+  const oldPath = process.env.PATH;
+  process.env.PATH = `${bin}:${oldPath}`;
+  t.after(() => {
+    process.env.PATH = oldPath;
+  });
+
+  const stop = await handleHook({ cwd: r.path, hook_event_name: "Stop" });
+  assert.equal((stop as { continue: boolean }).continue, false);
+  const active = hookStatus(r.path);
+  assert.equal(active.status, "awaiting_manual_evidence");
+  assert.match(active.candidate ?? "", /^[a-f0-9]{64}$/);
+  assert.equal(active.attempts, 0);
+  const runId = active.run_dir!.split("/").pop()!;
+  const rec = readRunRecord(r.path, runId);
+  assert.equal(rec.candidate, active.candidate);
+  assert.equal((rec.review as { collected: boolean }).collected, true);
 });

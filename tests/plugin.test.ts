@@ -67,6 +67,7 @@ test("plugin manifests, resource links and generated files stay synchronized", (
     for (const link of text.matchAll(/`(\.\.\/\.\.\/[^`<>]+)`/g)) {
       assert.ok(existsSync(resolve(path, link[1]!)), `${name}: ${link[1]}`);
     }
+    assert.doesNotMatch(text, /docs\/development-state\.md/);
   }
 });
 

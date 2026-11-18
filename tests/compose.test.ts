@@ -126,3 +126,102 @@ test("Compose interruption cleans owned resources and propagates cancellation", 
   await rejected;
   assert.ok(existsSync(cleaned));
 });
+
+test("Compose gate rejects symlinked compose parent, unsafe service capabilities, and host drift while exempting peer projects", async (t) => {
+  const { mkdirSync, symlinkSync } = await import("node:fs");
+  const r = repo(t);
+  const outside = join(r.root, "outside");
+  mkdirSync(outside);
+  writeFileSync(join(outside, "compose.yaml"), "services: {}\n");
+  symlinkSync(outside, join(r.path, "sub"));
+  writeFileSync(join(r.path, "compose.yaml"), "services: {}\n");
+  git(r.path, "add", "compose.yaml");
+  git(r.path, "commit", "-m", "compose");
+  const base = git(r.path, "rev-parse", "HEAD");
+
+  const symlinkCfg = parseConfig({
+    schema_version: 3,
+    checks: [],
+    policy: { editable_paths: ["src"], protected_paths: ["acceptance"] },
+    compose: {
+      files: ["sub/compose.yaml"],
+      services: ["api"],
+      test_service: "e2e",
+    },
+  });
+  const symRes = await verifyProject(
+    {
+      path: r.path,
+      base,
+      run_dir: join(r.root, "ev-sym"),
+      branch: "",
+      lock: "",
+    },
+    symlinkCfg,
+    performance.now() + 5000,
+    fake(r.root, ""),
+  );
+  assert.equal(symRes.passed, false);
+  assert.match(symRes.reason, /symlink/i);
+
+  mkdirSync(join(r.root, "cap"), { recursive: true });
+  const capDockerBin = fake(
+    join(r.root, "cap"),
+    `if(args.includes('config'))console.log(JSON.stringify({services:{api:{cap_add:['SYS_ADMIN'],healthcheck:{test:['CMD','true']}},e2e:{}}}));`,
+  );
+  const capRes = await verifyProject(
+    {
+      path: r.path,
+      base,
+      run_dir: join(r.root, "ev-cap"),
+      branch: "",
+      lock: "",
+    },
+    config(),
+    performance.now() + 5000,
+    capDockerBin,
+  );
+  assert.equal(capRes.passed, false);
+  assert.match(capRes.reason, /Unsafe/i);
+
+  mkdirSync(join(r.root, "peer"), { recursive: true });
+  const peerCount = join(r.root, "peer-ps-calls");
+  const peerDocker = fake(
+    join(r.root, "peer"),
+    `if(args.includes('config'))console.log(JSON.stringify({services:{api:{healthcheck:{test:['CMD','true']}},e2e:{}}}));if(args[0]==='ps'){const n=fs.existsSync(${JSON.stringify(peerCount)})?Number(fs.readFileSync(${JSON.stringify(peerCount)},'utf8'))+1:1;fs.writeFileSync(${JSON.stringify(peerCount)},String(n));console.log(n===1?'c1\\tfactory-agy-1-api-1\\tfactory-agy-1':'c1\\tfactory-agy-1-api-1\\tfactory-agy-1\\nc2\\tapp-preview-1\\tapp-preview');}`,
+  );
+  const peerRes = await verifyProject(
+    {
+      path: r.path,
+      base,
+      run_dir: join(r.root, "ev-peer"),
+      branch: "",
+      lock: "",
+    },
+    config(),
+    performance.now() + 5000,
+    peerDocker,
+  );
+  assert.equal(peerRes.passed, true, peerRes.reason);
+
+  mkdirSync(join(r.root, "drift"), { recursive: true });
+  const driftCount = join(r.root, "drift-ps-calls");
+  const driftDocker = fake(
+    join(r.root, "drift"),
+    `if(args.includes('config'))console.log(JSON.stringify({services:{api:{healthcheck:{test:['CMD','true']}},e2e:{}}}));if(args[0]==='ps'){const n=fs.existsSync(${JSON.stringify(driftCount)})?Number(fs.readFileSync(${JSON.stringify(driftCount)},'utf8'))+1:1;fs.writeFileSync(${JSON.stringify(driftCount)},String(n));if(n>1)console.log('rogue1\\trogue-container\\trogue-proj');}`,
+  );
+  const driftRes = await verifyProject(
+    {
+      path: r.path,
+      base,
+      run_dir: join(r.root, "ev-drift"),
+      branch: "",
+      lock: "",
+    },
+    config(),
+    performance.now() + 5000,
+    driftDocker,
+  );
+  assert.equal(driftRes.passed, false);
+  assert.match(driftRes.reason, /unrelated host containers changed/);
+});

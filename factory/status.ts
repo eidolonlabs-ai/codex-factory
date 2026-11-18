@@ -4,6 +4,7 @@ import {
   readFileSync,
   readdirSync,
   realpathSync,
+  statSync,
 } from "node:fs";
 import { join, resolve } from "node:path";
 import { storage, snapshotCandidate, type Workspace } from "./workspace.js";
@@ -20,16 +21,17 @@ export interface RunSummary {
   blockers: string[];
   next_action: string;
 }
+const RUN_CATEGORIES = [
+  "runs",
+  "intake-runs",
+  "verification",
+  "orchestrations",
+] as const;
+
 export function locateRun(repo: string, runId: string): string {
   if (!/^[a-f0-9]{32}$/.test(runId)) throw new Error("Invalid run ID");
   const home = storage(repo);
-  for (const kind of [
-    "runs",
-    "intake-runs",
-    "verification",
-    "orchestrations",
-    "orchestrations",
-  ]) {
+  for (const kind of RUN_CATEGORIES) {
     const parent = join(home, kind),
       dir = join(parent, runId);
     if (existsSync(dir)) {
@@ -113,9 +115,13 @@ export function readRunSummary(repo: string, runId: string): RunSummary {
       "Persisted running state is not verified live; inspect controller before recovery",
     );
   if (
-    ["failed", "interrupted", "timed_out", "awaiting_manual_evidence"].includes(
-      s.status,
-    )
+    [
+      "blocked",
+      "failed",
+      "interrupted",
+      "timed_out",
+      "awaiting_manual_evidence",
+    ].includes(s.status)
   )
     s.blockers.push(typeof r.reason === "string" ? r.reason : s.status);
   const review = r.review as
@@ -144,19 +150,19 @@ export function readRunSummary(repo: string, runId: string): RunSummary {
 export function listRuns(repo: string): RunSummary[] {
   const home = storage(repo);
   const ids: string[] = [];
-  for (const kind of [
-    "runs",
-    "intake-runs",
-    "verification",
-    "orchestrations",
-    "orchestrations",
-  ]) {
+  for (const kind of RUN_CATEGORIES) {
     const p = join(home, kind);
     if (!existsSync(p) || lstatSync(p).isSymbolicLink()) continue;
     ids.push(
       ...readdirSync(p)
         .filter((id) => /^[a-f0-9]{32}$/.test(id))
-        .slice(-50),
+        .map((id) => ({
+          id,
+          mtime: lstatSync(join(p, id)).mtimeMs,
+        }))
+        .sort((a, b) => a.mtime - b.mtime || a.id.localeCompare(b.id))
+        .slice(-50)
+        .map((x) => x.id),
     );
   }
   return [...new Set(ids)].map((id) => readRunSummary(repo, id));
