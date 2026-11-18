@@ -1,6 +1,6 @@
-# Harness CLI
+# Factory CLI
 
-From the template, run `npm ci` and prefix each command with `npm run harness --`. From a plugin installation, use `node "<PLUGIN_ROOT>/scripts/harness.mjs"`. Run from the target repository or pass `--repo PATH`. Task, plan, config, and source paths resolve from the caller's working directory.
+From the template, run `npm ci` and prefix each command with `npm run factory --`. From a plugin installation, use `node "<PLUGIN_ROOT>/scripts/factory.mjs"`. Run from the target repository or pass `--repo PATH`. Task, plan, config, and source paths resolve from the caller's working directory.
 
 | Command | Purpose |
 | --- | --- |
@@ -20,6 +20,6 @@ Task IDs use 1–48 lowercase letters, digits, or hyphens. Scope entries are nor
 
 ## Failures and recovery
 
-Inspect `handoff RUN_ID` and the logs in the Git common directory under `harness/`. Managed runs can retry ordinary check failures within the attempt budget. Ctrl-C interrupts the controller and preserves its evidence. After a hard crash, inspect the worktree and process before recovering a stale lock. To retry, start a new run using an approved base and retain the prior diff and evidence.
+Inspect `handoff RUN_ID` and the logs in the Git common directory under `factory/`. Managed runs can retry ordinary check failures within the attempt budget. Ctrl-C interrupts the controller and preserves its evidence. After a hard crash, inspect the worktree and process before recovering a stale lock. To retry, start a new run using an approved base and retain the prior diff and evidence.
 
 [Task workflow](solo-workflow.md) · [Hook behavior](hooks.md) · [Compatibility](compatibility.md)

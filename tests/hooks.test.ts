@@ -10,9 +10,9 @@ import {
   hookDirectory,
   deactivate,
   guardCommand,
-} from "../harness/hooks.js";
-import { parseConfig } from "../harness/models.js";
-import { taskDigest } from "../harness/readiness.js";
+} from "../factory/hooks.js";
+import { parseConfig } from "../factory/models.js";
+import { taskDigest } from "../factory/readiness.js";
 const raw = {
   schema_version: 3,
   checks: [],
@@ -29,7 +29,7 @@ test("adopted hook guards block bypass and direct protected patches, leave unado
     tool_input: { command: "git commit --no-verify -m x" },
   };
   assert.deepEqual(await handleHook(event), {});
-  writeFileSync(join(r.path, "harness.json"), JSON.stringify(raw));
+  writeFileSync(join(r.path, "factory.json"), JSON.stringify(raw));
   assert.match(JSON.stringify(await handleHook(event)), /deny/);
   assert.match(
     JSON.stringify(
@@ -38,7 +38,7 @@ test("adopted hook guards block bypass and direct protected patches, leave unado
         tool_name: "apply_patch",
         tool_input: {
           command:
-            "*** Begin Patch\n*** Update File: harness.json\n@@\n-x\n+y\n*** End Patch",
+            "*** Begin Patch\n*** Update File: factory.json\n@@\n-x\n+y\n*** End Patch",
         },
       }),
     ),
@@ -55,7 +55,7 @@ test("adopted hook guards block bypass and direct protected patches, leave unado
 });
 test("activation freezes config, prevents replacement, and blocked state cannot pass", async (t) => {
   const r = repo(t);
-  writeFileSync(join(r.path, "harness.json"), JSON.stringify(raw));
+  writeFileSync(join(r.path, "factory.json"), JSON.stringify(raw));
   git(r.path, "add", ".");
   git(r.path, "commit", "-m", "config");
   const acceptance = {
@@ -79,7 +79,7 @@ test("activation freezes config, prevents replacement, and blocked state cannot 
     /Active task/,
   );
   writeFileSync(
-    join(r.path, "harness.json"),
+    join(r.path, "factory.json"),
     JSON.stringify({ ...raw, limits: { attempts: 99 } }),
   );
   const result = await handleHook({ cwd: r.path, hook_event_name: "Stop" });
@@ -105,7 +105,7 @@ test("activation freezes config, prevents replacement, and blocked state cannot 
 });
 test("failure budget persists across turns and cannot report acceptance", async (t) => {
   const r = repo(t);
-  writeFileSync(join(r.path, "harness.json"), JSON.stringify(raw));
+  writeFileSync(join(r.path, "factory.json"), JSON.stringify(raw));
   git(r.path, "add", ".");
   git(r.path, "commit", "-m", "config");
   const a = {
@@ -151,7 +151,7 @@ test("failure budget persists across turns and cannot report acceptance", async 
 
 test("removing project config cannot disable an activated Stop gate", async (t) => {
   const r = repo(t);
-  writeFileSync(join(r.path, "harness.json"), JSON.stringify(raw));
+  writeFileSync(join(r.path, "factory.json"), JSON.stringify(raw));
   git(r.path, "add", ".");
   git(r.path, "commit", "-m", "config");
   const a = {
@@ -171,7 +171,7 @@ test("removing project config cannot disable an activated Stop gate", async (t) 
   };
   activate(r.path, TASK, parseConfig(raw), a);
   const { unlinkSync } = await import("node:fs");
-  unlinkSync(join(r.path, "harness.json"));
+  unlinkSync(join(r.path, "factory.json"));
   assert.equal(
     (
       (await handleHook({ cwd: r.path, hook_event_name: "Stop" })) as {
@@ -185,7 +185,7 @@ test("removing project config cannot disable an activated Stop gate", async (t) 
 
 test("omitted activation denies direct edits and detects indirect shell changes at Stop", async (t) => {
   const r = repo(t);
-  writeFileSync(join(r.path, "harness.json"), JSON.stringify(raw));
+  writeFileSync(join(r.path, "factory.json"), JSON.stringify(raw));
   git(r.path, "add", ".");
   git(r.path, "commit", "-m", "adopt");
   const event = {
@@ -214,15 +214,15 @@ test("omitted activation denies direct edits and detects indirect shell changes 
 });
 test("managed contexts allow scoped worker patches but reject symlink parents", async (t) => {
   const r = repo(t);
-  writeFileSync(join(r.path, "harness.json"), JSON.stringify(raw));
-  const { managedContext } = await import("../harness/hooks.js");
+  writeFileSync(join(r.path, "factory.json"), JSON.stringify(raw));
+  const { managedContext } = await import("../factory/hooks.js");
   const { symlinkSync } = await import("node:fs");
   const cleanup = managedContext(r.path, TASK, parseConfig(raw));
-  const old = process.env.CODEX_HARNESS_WORKER_TOKEN;
-  process.env.CODEX_HARNESS_WORKER_TOKEN = cleanup.token;
+  const old = process.env.CODEX_FACTORY_WORKER_TOKEN;
+  process.env.CODEX_FACTORY_WORKER_TOKEN = cleanup.token;
   t.after(() => {
-    if (old === undefined) delete process.env.CODEX_HARNESS_WORKER_TOKEN;
-    else process.env.CODEX_HARNESS_WORKER_TOKEN = old;
+    if (old === undefined) delete process.env.CODEX_FACTORY_WORKER_TOKEN;
+    else process.env.CODEX_FACTORY_WORKER_TOKEN = old;
   });
 
   symlinkSync(r.root, join(r.path, "src/link"));
@@ -245,8 +245,8 @@ test("managed contexts allow scoped worker patches but reject symlink parents", 
 
 test("retained managed state without matching invocation cannot bypass Stop", async (t) => {
   const r = repo(t);
-  writeFileSync(join(r.path, "harness.json"), JSON.stringify(raw));
-  const { managedContext } = await import("../harness/hooks.js");
+  writeFileSync(join(r.path, "factory.json"), JSON.stringify(raw));
+  const { managedContext } = await import("../factory/hooks.js");
   const cleanup = managedContext(r.path, TASK, parseConfig(raw));
   const result = await handleHook({
     cwd: r.path,
@@ -260,7 +260,7 @@ test("retained managed state without matching invocation cannot bypass Stop", as
 
 test("Stop adapter errors terminate blocked instead of requesting an endless retry", async (t) => {
   const r = repo(t);
-  writeFileSync(join(r.path, "harness.json"), "{malformed");
+  writeFileSync(join(r.path, "factory.json"), "{malformed");
   const { spawnSync } = await import("node:child_process");
   const { resolve } = await import("node:path");
   const result = spawnSync(
@@ -268,7 +268,7 @@ test("Stop adapter errors terminate blocked instead of requesting an endless ret
     [
       "--import",
       resolve("node_modules/tsx/dist/loader.mjs"),
-      resolve("harness/hook-entry.ts"),
+      resolve("factory/hook-entry.ts"),
     ],
     {
       encoding: "utf8",

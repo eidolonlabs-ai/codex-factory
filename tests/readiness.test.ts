@@ -1,13 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { TASK } from "./helpers.js";
-import { parseConfig } from "../harness/models.js";
+import { parseConfig } from "../factory/models.js";
 import {
   assessReadiness,
   taskDigest,
   parseAcceptance,
   missingEvidence,
-} from "../harness/readiness.js";
+} from "../factory/readiness.js";
 const config = parseConfig({
   schema_version: 1,
   checks: [{ name: "unit", argv: ["node", "check.mjs"] }],

@@ -1,4 +1,4 @@
-name: Harness verification
+name: Factory verification
 on: [push, pull_request]
 permissions:
   contents: read
@@ -21,4 +21,4 @@ jobs:
       - run: npm run plugin:check
       - run: npm test
       - run: npm run build
-      - run: node dist/harness/cli.js verify --config examples/demo/harness.json
+      - run: node dist/factory/cli.js verify --config examples/demo/factory.json

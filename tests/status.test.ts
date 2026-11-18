@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { repo } from "./helpers.js";
-import { storage, snapshotCandidate } from "../harness/workspace.js";
-import { writeResult } from "../harness/evidence.js";
-import { readRunSummary, renderHandoff, listRuns } from "../harness/status.js";
+import { storage, snapshotCandidate } from "../factory/workspace.js";
+import { writeResult } from "../factory/evidence.js";
+import { readRunSummary, renderHandoff, listRuns } from "../factory/status.js";
 import { join } from "node:path";
 import { writeFileSync, mkdirSync } from "node:fs";
 test("status detects drift and handoff never claims a running record is live", (t) => {

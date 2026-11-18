@@ -3,12 +3,12 @@
 Reconcile these instructions with the project's existing AGENTS.md; this file
 does not activate them automatically.
 
-- Use the installed Codex Harness coordinate-development skill for approved
+- Use the installed Codex Factory coordinate-development skill for approved
   tasks. Clarify consequential requirements before implementation.
 - Define acceptance criteria, allowed paths, dependencies, and the base commit.
-- Run the plugin's `scripts/harness.mjs verify --repo <project>` with Node 22+.
+- Run the plugin's `scripts/factory.mjs verify --repo <project>` with Node 22+.
   Resolve the plugin root from its installed skill path. Configure real checks
-  in harness.json; empty checks deliberately fail.
+  in factory.json; empty checks deliberately fail.
 - Delegate focused analysis/review to native subagents. Use separate Desktop
   Worktree chats for parallel builders and verify the integrated candidate.
 - Preserve acceptance controls and report live/browser checks not exercised.

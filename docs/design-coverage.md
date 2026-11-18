@@ -1,6 +1,6 @@
 # Design coverage
 
-Codex Harness 0.3 implements the local development loop for a solo developer or small team. The supplied playbooks, engineering guide, and workshop informed the workflow. The [design correction](harness-design-correction.md) records the owner decisions that made hooks, local orchestration, and Docker Compose acceptance core requirements.
+Codex Factory 0.3 implements the local development loop for a solo developer or small team. The supplied playbooks, engineering guide, and workshop informed the workflow. The [design correction](factory-design-correction.md) records the owner decisions that made hooks, local orchestration, and Docker Compose acceptance core requirements.
 
 | Design goal | What 0.3 provides |
 | --- | --- |

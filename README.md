@@ -1,16 +1,16 @@
-# Codex Harness
+# Codex Factory
 
-[![Harness verification](https://github.com/theRealMarkCastillo/codex-harness/actions/workflows/verify.yml/badge.svg)](https://github.com/theRealMarkCastillo/codex-harness/actions/workflows/verify.yml)
+[![Factory verification](https://github.com/eidolonlabs-ai/codex-factory/actions/workflows/verify.yml/badge.svg)](https://github.com/eidolonlabs-ai/codex-factory/actions/workflows/verify.yml)
 
 A local development workflow for solo developers and small teams using Codex Desktop or CLI. Define the task and its acceptance criteria, implement within agreed paths, then verify the candidate with Docker Compose and collect an independent review before deciding what to ship.
 
 ## Get started
 
 - **Add the plugin to Codex.** Install from the GitHub marketplace and review the bundled hooks. [Install, update, and adopt](docs/plugin.md)
-- **Use the repository template.** Clone [Codex Harness](https://github.com/theRealMarkCastillo/codex-harness) or copy it into a new repository and configure your application checks. [Template setup](docs/adoption.md)
+- **Use the repository template.** Clone [Codex Factory](https://github.com/eidolonlabs-ai/codex-factory) or copy it into a new repository and configure your application checks. [Template setup](docs/adoption.md)
 - **Start work.** Pick the path for a new project, existing repo, bug fix, or feature. [Task entry points](docs/entry-paths.md)
 
-Application acceptance uses Node.js 22+, Git, and a running Docker engine with Docker Compose. The harness runs on macOS and Linux, including WSL. See the tested configurations and limits in [Compatibility](docs/compatibility.md).
+Application acceptance uses Node.js 22+, Git, and a running Docker engine with Docker Compose. The factory runs on macOS and Linux, including WSL. See the tested configurations and limits in [Compatibility](docs/compatibility.md).
 
 ## Choose how to run the task
 
@@ -36,4 +36,4 @@ The demo exercises a fixture. For real Compose and browser verification, use the
 
 [Documentation index](docs/README.md) · [0.3 acceptance evidence](docs/hooks-acceptance.md) · [Trust boundaries](docs/security.md) · [MIT license](LICENSE)
 
-Codex Harness is an independent community project.
+Codex Factory is an independent community project.

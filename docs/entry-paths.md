@@ -1,6 +1,6 @@
 # Start a development task
 
-Install and adopt the [plugin](plugin.md), or [set up the template](https://github.com/theRealMarkCastillo/codex-harness/blob/main/docs/adoption.md) in your project. Open the repo in Codex Desktop or CLI and invoke the coordinator skill. For a new app, you can clarify the scope before creating the repository or configuring Docker.
+Install and adopt the [plugin](plugin.md), or [set up the template](https://github.com/eidolonlabs-ai/codex-factory/blob/main/docs/adoption.md) in your project. Open the repo in Codex Desktop or CLI and invoke the coordinator skill. For a new app, you can clarify the scope before creating the repository or configuring Docker.
 
 | Starting point | Give Codex | First milestone |
 | --- | --- | --- |
@@ -18,4 +18,4 @@ For example, ask Codex to reproduce whitespace-only note saves in the Compose st
 3. For interactive work, trust the [hooks](hooks.md) and run `activate TASK --acceptance RECORD`. For unattended work, use `run TASK --acceptance RECORD` or [`orchestrate PLAN`](orchestration.md).
 4. Inspect `hooks-status` or `handoff RUN_ID`, plus the check and review evidence. Run `deactivate` to archive an interactive task. The owner decides whether to ship the reviewed candidate.
 
-Run these commands with `node "<PLUGIN_ROOT>/scripts/harness.mjs"` or `npm run harness --` in the template. Pass `--repo PATH` if invoking the runtime outside the target repo.
+Run these commands with `node "<PLUGIN_ROOT>/scripts/factory.mjs"` or `npm run factory --` in the template. Pass `--repo PATH` if invoking the runtime outside the target repo.

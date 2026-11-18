@@ -3,7 +3,7 @@
 Phase: local implementation and approved installed CLI native-hook acceptance verified.
 Release: 0.3.0 shipped on main in `fc0f871`, based on `c4bcd9f`.
 Scope and acceptance: docs/remaining-implementation-task.md. Source reconciliation:
-docs/harness-design-correction.md. Owner selected adopted-project-only guards and
+docs/factory-design-correction.md. Owner selected adopted-project-only guards and
 required Docker/Compose full-stack acceptance. Direct main delivery is permitted
 when requested; PR workflow is not required.
 

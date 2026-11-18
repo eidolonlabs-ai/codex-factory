@@ -12,7 +12,7 @@ Run the task's targeted checks and invoke $verify-task. Do not weaken acceptance
 
 Return the task ID, base/HEAD, complete changed-file list, diff or commit, checks with results, and gaps. Do not merge or publish. The coordinator integrates builders and verifies the combined candidate before review.
 
-Only for explicitly selected unattended execution: use `npm run harness -- doctor`, then `npm run harness -- run tasks/TASK.json`. The CLI enforces its own budgets and protected paths; it may stop for protected test/control edits even where a Desktop task allows them.
+Only for explicitly selected unattended execution: use `npm run factory -- doctor`, then `npm run factory -- run tasks/TASK.json`. The CLI enforces its own budgets and protected paths; it may stop for protected test/control edits even where a Desktop task allows them.
 
 For bugs and review findings, reproduce first and add a regression within authorized paths where practical; use docs/design-checklist.md.
 

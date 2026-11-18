@@ -4,7 +4,7 @@ description: Coordinate solo development from Desktop or CLI through clarificati
 ---
 # Coordinate solo development
 
-Desktop and CLI are interfaces. Interactive work is the default for exploration and small edits. An explicit request to run an approved task unattended selects controller-managed execution from either interface; reuse that authorization. The controller launches a separate Codex process and supervises that run, not the parent chat. Use `npm run harness -- doctor` and task preflight before `npm run harness -- run`. Monitor the recorded run ID/status until completion; do not assume closing the interface preserves the process. The verifier runs checks without launching a builder.
+Desktop and CLI are interfaces. Interactive work is the default for exploration and small edits. An explicit request to run an approved task unattended selects controller-managed execution from either interface; reuse that authorization. The controller launches a separate Codex process and supervises that run, not the parent chat. Use `npm run factory -- doctor` and task preflight before `npm run factory -- run`. Monitor the recorded run ID/status until completion; do not assume closing the interface preserves the process. The verifier runs checks without launching a builder.
 
 ## Intake and decisions
 
@@ -28,7 +28,7 @@ Use $implement-task inside each Worktree chat. Builders stop on missing decision
 
 Collect builder handoffs and inspect their actual diffs. In a dedicated integration Worktree based on the approved base, apply reviewed commits/patches in dependency order. This is local integration, not merging the destination branch. Resolve conflicts against the approved contract and disclose behavioral decisions. Do not treat separate green builders as a green integrated app.
 
-Invoke $verify-task on the combined candidate. Run the shared verifier and any required live/browser checks. Capture the base, current HEAD, full dirty diff and untracked files, commands/results, and remaining gaps. A missing application check is a failure even if harness tests pass.
+Invoke $verify-task on the combined candidate. Run the shared verifier and any required live/browser checks. Capture the base, current HEAD, full dirty diff and untracked files, commands/results, and remaining gaps. A missing application check is a failure even if factory tests pass.
 
 Delegate a fresh native `reviewer` over the combined candidate using $review-task. If that role is unavailable, supply its instructions to a fresh native analysis subagent and record the fallback, as with the architect. Give it the approved spec, task cards, base, candidate diff and check evidence; keep it read-only. Return concrete findings to the owner. Fix material findings, rerun affected checks plus the integrated verification, and obtain focused review where the fix materially changes behavior. Present the final evidence and unresolved risks before asking the owner to merge. Never merge automatically.
 
@@ -38,4 +38,4 @@ Maintain `docs/development-state.md` using its template: phase, source, unresolv
 
 Native plugin hooks are required for interactive enforcement in adopted projects. Review/trust the installed definitions, configure v3 Docker Compose acceptance, and activate the approved task. See docs/hooks.md and docs/entry-paths.md. Report interactive versus managed execution separately from host-specific observations. Managed timeouts apply while the controller owns the run; interactive Stop gates persist their own failed-attempt budget. Use docs/design-checklist.md for applicable edge cases, contracts, acceptance and reproduction-first repairs.
 
-For accepted tasks, generate and inspect a companion acceptance record with `npm run harness -- prepare TASK`, then `preflight TASK --acceptance RECORD`. Use task-aware verify/review in either mode. Use `runs` and `handoff RUN_ID` for durable context; read docs/solo-workflow.md. Keep manual observations outside the working tree.
+For accepted tasks, generate and inspect a companion acceptance record with `npm run factory -- prepare TASK`, then `preflight TASK --acceptance RECORD`. Use task-aware verify/review in either mode. Use `runs` and `handoff RUN_ID` for durable context; read docs/solo-workflow.md. Keep manual observations outside the working tree.

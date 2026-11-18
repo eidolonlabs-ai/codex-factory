@@ -17,7 +17,7 @@ design analysis and final review. No parallel builders.
 
 ## Acceptance and ownership
 
-- Add `plugins/codex-harness/` and `.agents/plugins/marketplace.json` with
+- Add `plugins/codex-factory/` and `.agents/plugins/marketplace.json` with
   synchronized portable/compatibility identities and six discoverable skills.
 - Generate existing workflow skills and supporting templates from canonical
   repository sources; detect stale generated files. Bundle the existing CLI
@@ -47,7 +47,7 @@ must not be weakened. Tests/configuration changes require independent review.
 2. Add standalone-package regression tests and build/check/archive commands.
 3. Extend CI with generation checks, and document GitHub distribution/adoption.
 4. Save source coverage assessment and prioritized future work.
-5. Run typecheck, formatting, harness and plugin tests, build, demo verifier,
+5. Run typecheck, formatting, factory and plugin tests, build, demo verifier,
    package freshness/archive inspection, then independent candidate review.
 
 No publishing, global installation, public submission, merge, or deployment is

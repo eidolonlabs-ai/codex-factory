@@ -1,14 +1,21 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import {
+  cpSync,
+  existsSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  writeFileSync,
+} from "node:fs";
+import { delimiter, join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { parseConfig } from "../harness/models.js";
-import { runTask } from "../harness/runner.js";
-import { reviewCandidate } from "../harness/review.js";
-import { runIntake, extractSource } from "../harness/intake.js";
-import { doctor } from "../harness/doctor.js";
-import { prepareWorkspace, snapshotCandidate } from "../harness/workspace.js";
+import { parseConfig } from "../factory/models.js";
+import { runTask } from "../factory/runner.js";
+import { reviewCandidate } from "../factory/review.js";
+import { runIntake, extractSource } from "../factory/intake.js";
+import { doctor } from "../factory/doctor.js";
+import { prepareWorkspace, snapshotCandidate } from "../factory/workspace.js";
 import { TASK, temp, repo, git, fake, report } from "./helpers.js";
 const config = (code = "void 0") =>
   parseConfig({
@@ -68,7 +75,7 @@ test("worker cannot replace verification config", async (t) => {
     r.path,
     TASK,
     config(),
-    fake(r.root, `fs.writeFileSync('harness.json','{}');${report}`),
+    fake(r.root, `fs.writeFileSync('factory.json','{}');${report}`),
   );
   assert.equal(result.status, "failed");
   assert.match(result.reason ?? "", /protected/);
@@ -205,6 +212,38 @@ test("DOCX extraction matches preserved original text exactly", () => {
     readFileSync("benchmarks/chronograph/input/extracted.txt", "utf8"),
   );
 });
+test("benchmark gives the architect the canonical ChronoGraph Markdown verbatim", (t) => {
+  const r = repo(t);
+  const benchmarkDir = "benchmarks/chronograph";
+  const inputDir = join(benchmarkDir, "input");
+  cpSync(inputDir, join(r.path, inputDir), { recursive: true });
+  renameSync(fake(r.root, response(intakeReport)), join(r.root, "codex"));
+  const p = spawnSync(
+    process.execPath,
+    ["--import", "tsx", "factory/cli.ts", "--repo", r.path, "benchmark"],
+    {
+      encoding: "utf8",
+      env: { ...process.env, PATH: r.root + delimiter + process.env.PATH },
+    },
+  );
+  assert.equal(p.status, 0, p.stderr);
+  const result = JSON.parse(p.stdout);
+  assert.equal(result.status, "needs_clarification");
+  assert.equal(result.source_name, "original.md");
+  assert.equal(
+    result.source_sha256,
+    "4b00410e74d5d07f500680f6d598e8e3899803207af750ea2d562cf2c062e256",
+  );
+  assert.equal(result.extracted_sha256, result.source_sha256);
+  assert.deepEqual(readdirSync(result.workspace).sort(), [
+    ".git",
+    "intake.txt",
+  ]);
+  assert.deepEqual(
+    readFileSync(join(result.workspace, "intake.txt")),
+    readFileSync(join(inputDir, "original.md")),
+  );
+});
 test("doctor reports unavailable Codex and config", (t) => {
   const r = repo(t);
   const result = doctor(r.path, "/nonexistent");
@@ -221,7 +260,7 @@ for (const [args, code, pattern] of [
     const r = repo(t);
     const p = spawnSync(
       process.execPath,
-      ["--import", "tsx", "harness/cli.ts", "--repo", r.path, ...args],
+      ["--import", "tsx", "factory/cli.ts", "--repo", r.path, ...args],
       { encoding: "utf8" },
     );
     assert.equal(p.status, code);
@@ -238,7 +277,7 @@ test("SIGINT records interrupted status and releases the task lock", async (t) =
     r.root,
     `fs.writeFileSync(${JSON.stringify(ready)},'ready');setInterval(()=>{},1000);`,
   );
-  const code = `import {runTask} from ${JSON.stringify(pathToFileURL(resolve("harness/runner.ts")).href)};const r=await runTask(${JSON.stringify(r.path)},${JSON.stringify(TASK)},${JSON.stringify(config())},${JSON.stringify(cmd)});console.log(JSON.stringify(r));`;
+  const code = `import {runTask} from ${JSON.stringify(pathToFileURL(resolve("factory/runner.ts")).href)};const r=await runTask(${JSON.stringify(r.path)},${JSON.stringify(TASK)},${JSON.stringify(config())},${JSON.stringify(cmd)});console.log(JSON.stringify(r));`;
   const p = spawn(
     process.execPath,
     ["--import", "tsx", "--input-type", "module", "-e", code],
@@ -264,7 +303,7 @@ test("SIGINT records interrupted status and releases the task lock", async (t) =
 });
 
 test("architect decision must be an exact string enum", async () => {
-  const { validateReport } = await import("../harness/intake.js");
+  const { validateReport } = await import("../factory/intake.js");
   for (const decision of [
     ["ready_for_planning"],
     ["needs_clarification"],
@@ -314,7 +353,7 @@ test("SIGINT during post-agent Git inspection records interruption and releases 
   );
   chmodSync(wrapper, 0o755);
   const cmd = fake(r.root, report);
-  const code = `import {runTask} from ${JSON.stringify(pathToFileURL(resolve("harness/runner.ts")).href)};console.log(JSON.stringify(await runTask(${JSON.stringify(r.path)},${JSON.stringify(TASK)},${JSON.stringify(config())},${JSON.stringify(cmd)})));`;
+  const code = `import {runTask} from ${JSON.stringify(pathToFileURL(resolve("factory/runner.ts")).href)};console.log(JSON.stringify(await runTask(${JSON.stringify(r.path)},${JSON.stringify(TASK)},${JSON.stringify(config())},${JSON.stringify(cmd)})));`;
   const p = spawn(
     process.execPath,
     ["--import", "tsx", "--input-type", "module", "-e", code],

@@ -1,9 +1,9 @@
-# Remaining harness implementation
+# Remaining factory implementation
 
 Historical implementation scope for 0.3. See the [acceptance report](hooks-acceptance.md) for results.
 
 Approved: owner requested completion of the remaining chat requirements. Baseline
-c4bcd9f. Scope: harness/, schemas/, tests/, plugin-src/, scripts/, generated plugins/,
+c4bcd9f. Scope: factory/, schemas/, tests/, plugin-src/, scripts/, generated plugins/,
 canonical .agents skills/catalog, docs/, README.md, examples/compose-pilot/.
 
 Acceptance: native bundled adopted-project hooks deny bypass commands and scoped

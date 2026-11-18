@@ -32,4 +32,4 @@ observations. Aggregate run time and each worker's attempts are bounded.
 
 Use runs, status and handoff with the orchestration run ID. Cancellation must
 retain results; stale locks require inspection, never automatic removal. Starting
-another orchestration does not resume or discard the first. See the [Compose pilot](https://github.com/theRealMarkCastillo/codex-harness/blob/main/examples/compose-pilot/README.md) for an acceptance stack that can run concurrently.
+another orchestration does not resume or discard the first. See the [Compose pilot](https://github.com/eidolonlabs-ai/codex-factory/blob/main/examples/compose-pilot/README.md) for an acceptance stack that can run concurrently.

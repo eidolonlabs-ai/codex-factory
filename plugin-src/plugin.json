@@ -1,18 +1,18 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-  "name": "codex-harness",
+  "name": "codex-factory",
   "version": "0.3.0",
   "description": "Codex local development with native hook gates, Docker Compose acceptance, and dependency-aware worktree orchestration.",
-  "repository": "https://github.com/theRealMarkCastillo/codex-harness",
+  "repository": "https://github.com/eidolonlabs-ai/codex-factory",
   "license": "MIT",
   "extensions": {
     "com.openai": {
       "hooks": "./hooks/hooks.json",
       "interface": {
-        "displayName": "Codex Harness",
+        "displayName": "Codex Factory",
         "shortDescription": "Develop with verified tasks",
         "category": "Developer Tools",
-        "defaultPrompt": "Set up the harness for this project, then coordinate an approved development task."
+        "defaultPrompt": "Set up the factory for this project, then coordinate an approved development task."
       }
     }
   }

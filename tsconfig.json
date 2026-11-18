@@ -14,7 +14,7 @@
     "skipLibCheck": true
   },
   "include": [
-    "harness/**/*.ts",
+    "factory/**/*.ts",
     "tests/**/*.ts"
   ]
 }

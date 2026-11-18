@@ -1,6 +1,6 @@
 # Desktop prompts
 
-Start each builder as a new Codex Desktop chat in the same project. Select **Worktree** under the composer, choose the approved base branch, and submit its prompt. Confirm the resulting checkout's base SHA matches the task. Use a common committed base; do not accidentally carry unrelated unstaged changes into builders. These UI steps follow the current [OpenAI Worktree guide](https://learn.chatgpt.com/docs/environments/git-worktrees); see [Desktop acceptance](https://github.com/theRealMarkCastillo/codex-harness/blob/main/docs/desktop-acceptance.md) for what was observed on this machine.
+Start each builder as a new Codex Desktop chat in the same project. Select **Worktree** under the composer, choose the approved base branch, and submit its prompt. Confirm the resulting checkout's base SHA matches the task. Use a common committed base; do not accidentally carry unrelated unstaged changes into builders. These UI steps follow the current [OpenAI Worktree guide](https://learn.chatgpt.com/docs/environments/git-worktrees); see [Desktop acceptance](https://github.com/eidolonlabs-ai/codex-factory/blob/main/docs/desktop-acceptance.md) for what was observed on this machine.
 
 ## Coordinator
 

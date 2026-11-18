@@ -1,14 +1,14 @@
 {
-  "name": "codex-harness",
+  "name": "codex-factory",
   "interface": {
-    "displayName": "Codex Harness"
+    "displayName": "Codex Factory"
   },
   "plugins": [
     {
-      "name": "codex-harness",
+      "name": "codex-factory",
       "source": {
         "source": "local",
-        "path": "./plugins/codex-harness"
+        "path": "./plugins/codex-factory"
       },
       "policy": {
         "installation": "AVAILABLE",

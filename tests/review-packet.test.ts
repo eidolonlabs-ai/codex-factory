@@ -1,13 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { TASK, repo, fake } from "./helpers.js";
-import { parseConfig } from "../harness/models.js";
+import { parseConfig } from "../factory/models.js";
 import {
   buildReviewPacket,
   validateDisposition,
-} from "../harness/review-packet.js";
-import { prepareWorkspace, snapshotCandidate } from "../harness/workspace.js";
-import { reviewCandidate } from "../harness/review.js";
+} from "../factory/review-packet.js";
+import { prepareWorkspace, snapshotCandidate } from "../factory/workspace.js";
+import { reviewCandidate } from "../factory/review.js";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 const candidate = "a".repeat(64);

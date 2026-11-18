@@ -1,6 +1,6 @@
 # Trust and enforcement boundaries
 
-Review a project's instructions, commands, and Compose configuration before invoking the harness. The controller executes verification with the user's OS permissions, including Docker access. Codex sandbox policy governs the agent's tools. Git worktrees separate working copies and share Git metadata.
+Review a project's instructions, commands, and Compose configuration before invoking the factory. The controller executes verification with the user's OS permissions, including Docker access. Codex sandbox policy governs the agent's tools. Git worktrees separate working copies and share Git metadata.
 
 Trusted native hooks can block covered commands and direct patches in adopted projects. Verification also checks the final candidate against task scope and protected paths. See [hook coverage](hooks.md) and [protection policy](solo-policy.md).
 

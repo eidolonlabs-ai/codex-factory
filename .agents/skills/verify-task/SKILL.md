@@ -2,7 +2,7 @@
 name: verify-task
 description: Run the project's configured checks and report concrete verification evidence and remaining gaps.
 ---
-Run `npm run harness -- verify` in the candidate checkout. For an approved task,
+Run `npm run factory -- verify` in the candidate checkout. For an approved task,
 use `verify --task TASK --acceptance RECORD` so scope, acceptance mapping and
 candidate-bound evidence are checked. Version 2 requires the companion record.
 Missing checks are an adoption error, not a pass. Read failed logs and distinguish

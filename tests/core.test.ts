@@ -9,16 +9,16 @@ import {
   readdirSync,
 } from "node:fs";
 import { join } from "node:path";
-import { parseTask, parseConfig } from "../harness/models.js";
+import { parseTask, parseConfig } from "../factory/models.js";
 import {
   prepareWorkspace,
   releaseWorkspace,
   snapshotCandidate,
   changedPaths,
-} from "../harness/workspace.js";
-import { runProcess } from "../harness/process.js";
-import { verify, scopeViolations } from "../harness/verify.js";
-import { writeResult } from "../harness/evidence.js";
+} from "../factory/workspace.js";
+import { runProcess } from "../factory/process.js";
+import { verify, scopeViolations } from "../factory/verify.js";
+import { writeResult } from "../factory/evidence.js";
 import { TASK, temp, repo, git } from "./helpers.js";
 const node = (code: string) => [process.execPath, "-e", code];
 

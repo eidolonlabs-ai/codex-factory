@@ -1,23 +1,23 @@
 {
-  "name": "codex-harness-template",
+  "name": "codex-factory-template",
   "version": "0.2.0",
   "private": true,
-  "description": "Desktop-first Codex harness template and optional unattended runner",
+  "description": "Desktop-first Codex factory template and optional unattended runner",
   "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "harness": "node --import tsx harness/cli.ts",
+    "factory": "node --import tsx factory/cli.ts",
     "test": "node --import tsx --test tests/*.test.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc",
     "plugin:build": "node scripts/build-plugin.mjs",
     "plugin:check": "node scripts/build-plugin.mjs --check",
     "plugin:pack": "node scripts/build-plugin.mjs --check --archive",
-    "verify:demo": "node --import tsx harness/cli.ts verify --config examples/demo/harness.json",
-    "format:check": "prettier --check \"harness/**/*.ts\" \"tests/**/*.ts\" \"scripts/**/*.mjs\" \"plugin-src/scripts/**/*.mjs\""
+    "verify:demo": "node --import tsx factory/cli.ts verify --config examples/demo/factory.json",
+    "format:check": "prettier --check \"factory/**/*.ts\" \"tests/**/*.ts\" \"scripts/**/*.mjs\" \"plugin-src/scripts/**/*.mjs\""
   },
   "dependencies": {
     "fflate": "0.8.3",

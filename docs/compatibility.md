@@ -11,7 +11,7 @@ Native sources consulted:
 
 See [0.3 acceptance](hooks-acceptance.md) for native CLI dispatch and Compose/browser checks, and [migration validation](validation.md) for earlier results. The package uses the [native manifest](hooks.md#codex-01690-package-compatibility) required by CLI 0.169.0. Global user instructions, skills, memory, plugins, and configured model settings can affect live results; v1 does not claim a clean-room benchmark or reset them. No global settings are modified.
 
-On macOS an enclosing agent sandbox may prevent a nested Codex process from opening its session database or initializing the app server. Run the harness from an ordinary authorized terminal if that happens; do not add a sandbox-bypass flag to the child agent.
+On macOS an enclosing agent sandbox may prevent a nested Codex process from opening its session database or initializing the app server. Run the factory from an ordinary authorized terminal if that happens; do not add a sandbox-bypass flag to the child agent.
 
 ## Desktop roles
 

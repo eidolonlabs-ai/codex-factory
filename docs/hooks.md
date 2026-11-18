@@ -13,12 +13,12 @@ In a fresh Codex session, review and trust the plugin's current hook definitions
 Activate the task from the target worktree using the installed runtime.
 
 ```sh
-node "<PLUGIN_ROOT>/scripts/harness.mjs" activate TASK --acceptance RECORD
+node "<PLUGIN_ROOT>/scripts/factory.mjs" activate TASK --acceptance RECORD
 ```
 
 Activation freezes the approved task, acceptance record, and v3 config for that worktree. Each Stop reruns acceptance. A failing check can request a repair, up to the persisted attempt limit. Protected changes or missing manual evidence can block completion. Passing checks and collected review yield `ready_for_human_review`. The owner reviews the findings and decides what ships.
 
-The Git common directory stores the task state and bounded `events.jsonl` audit under `harness/hooks/`. Check the audit to confirm dispatch. Use `hooks-status` to inspect the active task. Run `deactivate` after reviewing the result or deciding to cancel. If a crash leaves `gate.lock`, inspect the owning process before manual recovery.
+The Git common directory stores the task state and bounded `events.jsonl` audit under `factory/hooks/`. Check the audit to confirm dispatch. Use `hooks-status` to inspect the active task. Run `deactivate` after reviewing the result or deciding to cancel. If a crash leaves `gate.lock`, inspect the owning process before manual recovery.
 
 Hook coverage depends on the host and tool path. Errors or timeouts can prevent enforcement. For example, `write_stdin` does not start a fresh PreToolUse check. Read the [trust boundaries](security.md) before relying on hooks for controls that need OS enforcement.
 

@@ -14,11 +14,11 @@ import { execFileSync } from "node:child_process";
 
 const plugin = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const files = {
-  "harness.json": "templates/harness.json",
-  "docs/harness/task-card.md": "templates/desktop-task.md",
-  "docs/harness/development-state.md": "templates/development-state.md",
-  "docs/harness/example-task.json": "templates/example-task.json",
-  "docs/harness/AGENTS.snippet.md": "templates/AGENTS.snippet.md",
+  "factory.json": "templates/factory.json",
+  "docs/factory/task-card.md": "templates/desktop-task.md",
+  "docs/factory/development-state.md": "templates/development-state.md",
+  "docs/factory/example-task.json": "templates/example-task.json",
+  "docs/factory/AGENTS.snippet.md": "templates/AGENTS.snippet.md",
 };
 function inspect(root, name) {
   const parts = name.split("/");
@@ -117,7 +117,7 @@ try {
         upgrade:
           "Existing scaffolds remain project-owned; review and migrate explicitly.",
         files: plan.map(({ path, action }) => ({ path, action })),
-        next: "Configure required Docker Compose services and E2E in v3 harness.json; reconcile the AGENTS snippet and trust the plugin hooks. Missing stack checks fail.",
+        next: "Configure required Docker Compose services and E2E in v3 factory.json; reconcile the AGENTS snippet and trust the plugin hooks. Missing stack checks fail.",
       },
       null,
       2,

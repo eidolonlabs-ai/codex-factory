@@ -4,8 +4,8 @@ import { spawnSync } from "node:child_process";
 import { writeFileSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { repo, git, TASK } from "./helpers.js";
-import { taskDigest } from "../harness/readiness.js";
-const cli = resolve("harness/cli.ts");
+import { taskDigest } from "../factory/readiness.js";
+const cli = resolve("factory/cli.ts");
 const call = (path: string, args: string[]) =>
   spawnSync(
     process.execPath,
@@ -22,7 +22,7 @@ const call = (path: string, args: string[]) =>
 test("CLI prepares and preflights records, persists verification and rejects stale bases", (t) => {
   const r = repo(t);
   writeFileSync(
-    join(r.path, "harness.json"),
+    join(r.path, "factory.json"),
     JSON.stringify({
       schema_version: 1,
       checks: [
@@ -89,7 +89,7 @@ test("CLI prepares and preflights records, persists verification and rejects sta
 test("doctor verify mode does not require clean project or authenticated Codex", (t) => {
   const r = repo(t);
   writeFileSync(
-    join(r.path, "harness.json"),
+    join(r.path, "factory.json"),
     JSON.stringify({
       schema_version: 1,
       checks: [{ name: "unit", argv: ["node", "check.mjs"] }],
@@ -107,7 +107,7 @@ import { setTimeout as delay } from "node:timers/promises";
 test("interrupting interactive review persists interrupted status and missing-review handoff", async (t) => {
   const r = repo(t);
   writeFileSync(
-    join(r.path, "harness.json"),
+    join(r.path, "factory.json"),
     JSON.stringify({
       schema_version: 1,
       checks: [{ name: "unit", argv: [process.execPath, "-e", "void 0"] }],
@@ -152,7 +152,7 @@ test("interrupting interactive review persists interrupted status and missing-re
   assert.ok(existsSync(marker), "review process started");
   child.kill("SIGINT");
   await ended;
-  const dir = join(r.path, ".git/harness/verification");
+  const dir = join(r.path, ".git/factory/verification");
   const id = readdirSync(dir)[0]!;
   const result = JSON.parse(readFileSync(join(dir, id, "result.json"), "utf8"));
   assert.equal(result.status, "interrupted");
@@ -163,7 +163,7 @@ test("interrupting interactive review persists interrupted status and missing-re
 test("CLI disposition accepts complete current evidence and rejects missing evidence or drift", (t) => {
   const r = repo(t);
   writeFileSync(
-    join(r.path, "harness.json"),
+    join(r.path, "factory.json"),
     JSON.stringify({
       schema_version: 1,
       checks: [{ name: "unit", argv: [process.execPath, "-e", "void 0"] }],

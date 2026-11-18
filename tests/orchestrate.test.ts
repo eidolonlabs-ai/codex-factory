@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parsePlan } from "../harness/orchestrate.js";
+import { parsePlan } from "../factory/orchestrate.js";
 import { TASK } from "./helpers.js";
-import { taskDigest } from "../harness/readiness.js";
+import { taskDigest } from "../factory/readiness.js";
 const node = (id: string, paths: string[], deps: string[]) => {
   const task = { ...TASK, id, allowed_paths: paths };
   return {
@@ -69,9 +69,9 @@ test("orchestration validates DAG ownership and dependency contracts", () => {
 import { repo, git, fake } from "./helpers.js";
 import { mkdirSync, writeFileSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
-import { orchestrate } from "../harness/orchestrate.js";
-import { parseConfig } from "../harness/models.js";
-import { storage } from "../harness/workspace.js";
+import { orchestrate } from "../factory/orchestrate.js";
+import { parseConfig } from "../factory/models.js";
+import { storage } from "../factory/workspace.js";
 for (const locked of [false, true])
   test(`local graph integration and settled sibling evidence (locked=${locked})`, async (t) => {
     const r = repo(t);
@@ -87,7 +87,7 @@ for (const locked of [false, true])
       },
       limits: { run_seconds: 60, agent_seconds: 10 },
     });
-    writeFileSync(join(r.path, "harness.json"), JSON.stringify(cfg));
+    writeFileSync(join(r.path, "factory.json"), JSON.stringify(cfg));
     git(r.path, "add", ".");
     git(r.path, "commit", "-m", "config");
     const base = git(r.path, "rev-parse", "HEAD");

@@ -10,7 +10,7 @@ Local checks on Node.js 22.22.3/macOS:
 - `npm run typecheck`: passed with strict application/test type checking.
 - `npm run format:check`: passed.
 - `npm run build`: passed.
-- `node dist/harness/cli.js verify --config examples/demo/harness.json`: passed.
+- `node dist/factory/cli.js verify --config examples/demo/factory.json`: passed.
 - Unconfigured project verification fails deliberately.
 - The original ChronoGraph DOCX extracts to exactly the preserved text; UTF-16 XML fixtures also pass.
 
@@ -18,11 +18,11 @@ Real temporary repositories/processes cover worktree isolation and locks, linked
 
 A real TypeScript CLI smoke task completed an implementation, independent check, and separate review. A new ChronoGraph CLI intake returned needs_clarification with 12 questions. Those calls ran before the final review fixes; the final changes have targeted regressions and the full passing suite. Live calls used the account's configured model, so they are not controlled cross-model comparisons. Private session metadata is not published.
 
-The Node.js CI matrix targets Ubuntu/macOS with Node 22/24. See the [workflow runs](https://github.com/theRealMarkCastillo/codex-harness/actions/workflows/verify.yml) for CI results.
+The Node.js CI matrix targets Ubuntu/macOS with Node 22/24. See the [workflow runs](https://github.com/eidolonlabs-ai/codex-factory/actions/workflows/verify.yml) for CI results.
 
 ## Earlier Python and Desktop evidence
 
-The original Python implementation passed 33 tests and its initial cross-platform CI. [Historical CI run](https://github.com/theRealMarkCastillo/codex-harness/actions/runs/44010310656). Those results are historical and are not evidence for the TypeScript implementation.
+The original Python implementation passed 33 tests and its initial cross-platform CI. [Historical CI run](https://github.com/eidolonlabs-ai/codex-factory/actions/runs/44010310656). Those results are historical and are not evidence for the TypeScript implementation.
 
 The earlier headless intake returned 7 questions, 6 blocking, in 46.33 seconds. [Historical report](../benchmarks/chronograph/results/first-run.md). A separate earlier one-file implementation/review smoke passed in 30.42 seconds.
 

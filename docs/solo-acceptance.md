@@ -31,7 +31,7 @@ and installation. No publication, merge or deployment was performed.
 | Setup / archive regression tests | Repeated additive adoption preserves existing rules/config; extracted bundle runs independently |
 | Negative regression cases | Missing checks/executable, protected edits, invalid paths, candidate drift, missing review output, missing manual evidence and interrupted review covered |
 
-The ZIP at `dist/codex-harness-0.2.1.zip` is a source/private distribution
+The ZIP at `dist/codex-factory-0.2.1.zip` is a source/private distribution
 artifact. It is not a completed public-directory submission.
 
 ## Actual disposable application
@@ -75,11 +75,11 @@ also verified that follow-up evidence works from the managed linked worktree.
 
 Raw pilot evidence is retained locally under
 `/private/var/folders/wm/nsxs1hz15rz4rf6b8lg96d9h0000gp/T/codex-solo-pilot-RROqCB`
-in each Git common directory's `harness` folders. These temporary paths are
+in each Git common directory's `factory` folders. These temporary paths are
 machine-specific and may expire. Browser screenshot: `dist/solo-pilot-browser.jpg`.
 Neither local hashes nor operator observations are signed attestations.
 
-## Independent harness review
+## Independent factory review
 
 Read-only native reviews examined policy and the integrated implementation.
 Fixed findings: nested executable config protection, accepting empty reviewer

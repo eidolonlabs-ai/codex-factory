@@ -11,7 +11,7 @@
 - Depends on task IDs (empty if independent):
 - Acceptance criteria (same as task JSON):
 - Targeted checks:
-- Shared integrated verification: `npm run harness -- verify`
+- Shared integrated verification: `npm run factory -- verify`
 - Required live/browser checks:
 - Stop conditions: unresolved requirements, missing dependency, ownership conflict, configured repair budget exhausted.
 - Handoff: base/HEAD, full diff incl. untracked files, changed files, commands/results, unresolved issues.

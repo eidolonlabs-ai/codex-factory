@@ -2,7 +2,7 @@
 name: review-task
 description: Inspect Codex task evidence and review the complete candidate before human merge decisions.
 ---
-Use `npm run harness -- review --task TASK --acceptance RECORD` for a managed
+Use `npm run factory -- review --task TASK --acceptance RECORD` for a managed
 review of an interactive candidate. It performs fresh verification and saves a
 review packet. For a native reviewer, supply the same packet's task, acceptance,
 check results, candidate and complete diff. Include commits, dirty changes and

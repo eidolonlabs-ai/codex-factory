@@ -1,18 +1,18 @@
 # TypeScript migration
 
-The harness now requires Node.js 22+ and npm. Python is no longer required to run the harness, verifier, demo, tests, or DOCX intake. The original ChronoGraph application specification still mentions Python because it is unchanged benchmark input.
+The factory now requires Node.js 22+ and npm. Python is no longer required to run the factory, verifier, demo, tests, or DOCX intake. The original ChronoGraph application specification still mentions Python because it is unchanged benchmark input.
 
 ## Commands
 
 | Previous | Replacement |
 |---|---|
 | Python unit-test discovery | `npm test` |
-| Python harness command | `npm run harness -- COMMAND` |
-| Project verification | `npm run harness -- verify` |
+| Python factory command | `npm run factory -- COMMAND` |
+| Project verification | `npm run factory -- verify` |
 | Demo verification | `npm run verify:demo` |
 | Type checking | `npm run typecheck` |
 | Compile | `npm run build` |
-| Run compiled CLI | `node dist/harness/cli.js COMMAND` |
+| Run compiled CLI | `node dist/factory/cli.js COMMAND` |
 
 Run `npm ci` after cloning and in each new Desktop Worktree. For an existing Node application, merge package scripts/dependencies and tsconfig settings instead of replacing its package files.
 

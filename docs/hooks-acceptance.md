@@ -1,4 +1,4 @@
-# Hook-driven local harness acceptance — 2026-11-17
+# Hook-driven local factory acceptance — 2026-11-17
 
 Candidate plugin: 0.3.0, based on c4bcd9f. This report supersedes the earlier
 skills-only acceptance for the newly required hook/Compose workflow. The verified package shipped on main in
@@ -89,7 +89,7 @@ Chromium verified visible status behavior only. Owner disposition remains pendin
 This exercised real worker processes and Docker, not fake model acceptance.
 It did not prove native hook dispatch inside those workers: the installed plugin
 was still 0.2.1, and their gates were controller-managed. Evidence is retained at
-`/private/var/folders/wm/nsxs1hz15rz4rf6b8lg96d9h0000gp/T/codex-graph-live-z_vct0yc/repo/.git/harness/orchestrations/894adf9ad61a4766a6c24a7201ae0eac`.
+`/private/var/folders/wm/nsxs1hz15rz4rf6b8lg96d9h0000gp/T/codex-graph-live-z_vct0yc/repo/.git/factory/orchestrations/894adf9ad61a4766a6c24a7201ae0eac`.
 
 ## Native CLI dispatch acceptance
 

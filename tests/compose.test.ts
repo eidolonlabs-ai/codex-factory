@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { writeFileSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { repo, git, fake } from "./helpers.js";
-import { parseConfig } from "../harness/models.js";
-import { verifyProject } from "../harness/compose.js";
+import { parseConfig } from "../factory/models.js";
+import { verifyProject } from "../factory/compose.js";
 const config = () =>
   parseConfig({
     schema_version: 3,
@@ -69,7 +69,7 @@ if(${JSON.stringify(mode)}==='up-failure'&&args.includes('up'))process.exit(1);`
       ))
         assert.match(
           a[a.indexOf("--project-name") + 1]!,
-          /^harness-[a-f0-9]{32}$/,
+          /^factory-[a-f0-9]{32}$/,
         );
       assert.ok(!callsList.some((a) => a.includes("prune")));
     }

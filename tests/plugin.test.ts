@@ -14,7 +14,7 @@ import { join, resolve } from "node:path";
 import { unzipSync, strFromU8 } from "fflate";
 import { git, repo, temp } from "./helpers.js";
 
-const source = resolve("plugins/codex-harness");
+const source = resolve("plugins/codex-factory");
 function call(script: string, args: string[], cwd: string) {
   const result = spawnSync(process.execPath, [script, ...args], {
     cwd,
@@ -63,7 +63,7 @@ test("plugin manifests, resource links and generated files stay synchronized", (
     const path = join(source, "skills", name);
     const text = readFileSync(join(path, "SKILL.md"), "utf8");
     assert.ok(text.startsWith(`---\nname: ${name}\n`));
-    assert.doesNotMatch(text, /npm run harness/);
+    assert.doesNotMatch(text, /npm run factory/);
     for (const link of text.matchAll(/`(\.\.\/\.\.\/[^`<>]+)`/g)) {
       assert.ok(existsSync(resolve(path, link[1]!)), `${name}: ${link[1]}`);
     }
@@ -80,16 +80,16 @@ test("standalone setup previews, preserves project files and repeats safely", (t
   let result = call(setup, ["--repo", path], root);
   assert.equal(result.status, 0, result.stderr);
   assert.equal(JSON.parse(result.stdout).applied, false);
-  assert.equal(existsSync(join(path, "harness.json")), false);
+  assert.equal(existsSync(join(path, "factory.json")), false);
   assert.equal(git(path, "status", "--porcelain"), before);
   result = call(setup, ["--repo", path, "--apply"], root);
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(
-    JSON.parse(readFileSync(join(path, "harness.json"), "utf8")).checks,
+    JSON.parse(readFileSync(join(path, "factory.json"), "utf8")).checks,
     [],
   );
   const custom = '{"schema_version":1,"checks":[],"limits":{"attempts":1}}\n';
-  writeFileSync(join(path, "harness.json"), custom);
+  writeFileSync(join(path, "factory.json"), custom);
   result = call(setup, ["--repo", path, "--apply"], root);
   assert.equal(result.status, 0, result.stderr);
   assert.ok(
@@ -97,7 +97,7 @@ test("standalone setup previews, preserves project files and repeats safely", (t
       (f: { action: string }) => f.action === "preserve",
     ),
   );
-  assert.equal(readFileSync(join(path, "harness.json"), "utf8"), custom);
+  assert.equal(readFileSync(join(path, "factory.json"), "utf8"), custom);
   assert.equal(
     readFileSync(join(path, "AGENTS.md"), "utf8"),
     "Project-specific rules\n",
@@ -121,17 +121,17 @@ test("setup rejects symlink destinations before creating any scaffold", (t) => {
   );
   assert.equal(result.status, 2);
   assert.match(result.stderr, /symlink/);
-  assert.equal(existsSync(join(path, "harness.json")), false);
+  assert.equal(existsSync(join(path, "factory.json")), false);
   assert.deepEqual(readdirSync(external), []);
 });
 
 test("standalone runtime verifies another project, fails closed and stores evidence there", (t) => {
   const { root, path } = repo(t);
   const plugin = standalone(root);
-  const cli = join(plugin, "scripts/harness.mjs");
+  const cli = join(plugin, "scripts/factory.mjs");
   const run = () => call(cli, ["verify", "--repo", path], root);
   writeFileSync(
-    join(path, "harness.json"),
+    join(path, "factory.json"),
     JSON.stringify({ schema_version: 1, checks: [] }),
   );
   let result = run();
@@ -142,7 +142,7 @@ test("standalone runtime verifies another project, fails closed and stores evide
     'import fs from "node:fs"; if (fs.readFileSync("src/a", "utf8") !== "base") process.exit(1);',
   );
   writeFileSync(
-    join(path, "harness.json"),
+    join(path, "factory.json"),
     JSON.stringify({
       schema_version: 1,
       checks: [
@@ -155,17 +155,17 @@ test("standalone runtime verifies another project, fails closed and stores evide
   const report = JSON.parse(result.stdout);
   assert.equal(report.passed, true);
   assert.ok(report.candidate);
-  assert.ok(existsSync(join(path, ".git/harness/verification")));
+  assert.ok(existsSync(join(path, ".git/factory/verification")));
   assert.equal(existsSync(join(plugin, ".git")), false);
   writeFileSync(join(path, "src/a"), "regression");
   result = run();
   assert.equal(result.status, 1, result.stderr);
   assert.equal(JSON.parse(result.stdout).passed, false);
   writeFileSync(
-    join(path, "harness.json"),
+    join(path, "factory.json"),
     JSON.stringify({
       schema_version: 1,
-      checks: [{ name: "missing", argv: ["/nonexistent/harness-check"] }],
+      checks: [{ name: "missing", argv: ["/nonexistent/factory-check"] }],
     }),
   );
   result = run();
@@ -188,11 +188,11 @@ test("archive contains a complete standalone plugin without repository extras", 
     readFileSync(resolve("plugin-src/plugin.json"), "utf8"),
   );
   const archive = unzipSync(
-    readFileSync(resolve(`dist/codex-harness-${manifest.version}.zip`)),
+    readFileSync(resolve(`dist/codex-factory-${manifest.version}.zip`)),
   );
   assert.equal(
     JSON.parse(strFromU8(archive[".codex-plugin/plugin.json"]!)).name,
-    "codex-harness",
+    "codex-factory",
   );
   assert.equal(
     JSON.parse(strFromU8(archive[".codex-plugin/plugin.json"]!)).version,
@@ -208,7 +208,7 @@ test("archive contains a complete standalone plugin without repository extras", 
     mkdirSync(resolve(target, ".."), { recursive: true });
     writeFileSync(target, archive[key]!);
   }
-  const help = call(join(root, "scripts/harness.mjs"), ["--help"], root);
+  const help = call(join(root, "scripts/factory.mjs"), ["--help"], root);
   assert.equal(help.status, 0, help.stderr);
   assert.match(help.stdout, /verify/);
   assert.ok(archive["THIRD_PARTY_NOTICES.md"]);
@@ -220,7 +220,7 @@ test("archive contains a complete standalone plugin without repository extras", 
   ]);
   const project = repo(t);
   writeFileSync(
-    join(project.path, "harness.json"),
+    join(project.path, "factory.json"),
     JSON.stringify({ schema_version: 1, checks: [] }),
   );
   const hook = spawnSync(process.execPath, [join(root, "scripts/hooks.mjs")], {

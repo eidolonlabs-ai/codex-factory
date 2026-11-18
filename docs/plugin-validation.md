@@ -12,12 +12,12 @@ as part of this task; demonstration checks exercise only the labeled fixture.
 | --- | --- |
 | `npm ci --offline --no-audit --no-fund` | Passed with synchronized package/lock files. esbuild 0.28.2 was already locked transitively and is now an explicit build dependency. |
 | `npm run typecheck` | Passed. |
-| `npm run format:check` | Passed for harness, tests, build scripts and plugin runtime/setup sources. |
+| `npm run format:check` | Passed for factory, tests, build scripts and plugin runtime/setup sources. |
 | `npm test` | 43 passed, zero failures/skips, including five plugin regression tests. |
 | `npm run build` | Passed. |
-| `node dist/harness/cli.js verify --config examples/demo/harness.json` | Passed, labeled demo fixture only. Required filesystem permission to write evidence under this checkout's `.git/harness`. |
+| `node dist/factory/cli.js verify --config examples/demo/factory.json` | Passed, labeled demo fixture only. Required filesystem permission to write evidence under this checkout's `.git/factory`. |
 | `npm run plugin:check` | Passed; 27 generated package files, six skills, catalog and manifests synchronized. |
-| `npm run plugin:pack` | Passed; source/private-distribution ZIP in `dist/codex-harness-0.1.0.zip`. |
+| `npm run plugin:pack` | Passed; source/private-distribution ZIP in `dist/codex-factory-0.1.0.zip`. |
 
 The five plugin tests check manifest consistency and resource resolution;
 preview-only and repeated adoption with existing rules/package/config retained;
@@ -37,7 +37,7 @@ Core controller code, protected paths and acceptance behavior were unchanged.
 ## Installation and remaining acceptance
 
 The installed CLI help confirms marketplace registration and plugin-add
-commands. A read-only `codex plugin list --marketplace codex-harness --available
+commands. A read-only `codex plugin list --marketplace codex-factory --available
 --json` returned empty installed/available lists for the unregistered checkout.
 That is not an installation/discovery pass. No user/global plugin settings
 were changed. The package is prepared for repository distribution; the remote

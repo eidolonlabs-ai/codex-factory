@@ -12,7 +12,7 @@ import { dirname, resolve, relative, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const output = join(root, "plugins/codex-harness");
+const output = join(root, "plugins/codex-factory");
 const args = process.argv.slice(2);
 if (args.some((a) => !["--check", "--archive"].includes(a)))
   throw new Error("Usage: build-plugin.mjs [--check] [--archive]");
@@ -40,7 +40,7 @@ const manifest = JSON.parse(files.get("plugin.json"));
 files.delete("plugin.json");
 const presentation = manifest.extensions["com.openai"].interface;
 if (
-  manifest.name !== "codex-harness" ||
+  manifest.name !== "codex-factory" ||
   !/^\d+\.\d+\.\d+$/.test(manifest.version) ||
   presentation.shortDescription.length > 30
 )
@@ -57,19 +57,19 @@ files.set(
   }),
 );
 const marketplace = json({
-  name: "codex-harness",
-  interface: { displayName: "Codex Harness" },
+  name: "codex-factory",
+  interface: { displayName: "Codex Factory" },
   plugins: [
     {
       name: manifest.name,
-      source: { source: "local", path: "./plugins/codex-harness" },
+      source: { source: "local", path: "./plugins/codex-factory" },
       policy: { installation: "AVAILABLE", authentication: "ON_INSTALL" },
       category: presentation.category,
     },
   ],
 });
-const command = 'node "<PLUGIN_ROOT>/scripts/harness.mjs"';
-const adapt = (text) => text.replaceAll("npm run harness --", command);
+const command = 'node "<PLUGIN_ROOT>/scripts/factory.mjs"';
+const adapt = (text) => text.replaceAll("npm run factory --", command);
 for (const name of readdirSync(join(root, ".agents/skills")).sort()) {
   let text = adapt(read(`.agents/skills/${name}/SKILL.md`));
   const end = text.indexOf("\n---", 4) + 4;
@@ -96,7 +96,7 @@ for (const name of readdirSync(join(root, ".agents/skills")).sort()) {
     )
     .replace(
       "Maintain `docs/development-state.md` using its template:",
-      "Maintain the project’s `docs/harness/development-state.md` using `../../templates/development-state.md`:",
+      "Maintain the project’s `docs/factory/development-state.md` using `../../templates/development-state.md`:",
     );
   if (name === "coordinate-development")
     text +=
@@ -111,7 +111,7 @@ for (const name of readdirSync(join(root, ".agents/skills")).sort()) {
 }
 for (const name of ["desktop-task", "development-state"])
   files.set(`templates/${name}.md`, adapt(read(`docs/templates/${name}.md`)));
-files.set("templates/harness.json", read("plugin-src/templates/harness.json"));
+files.set("templates/factory.json", read("plugin-src/templates/factory.json"));
 files.set("templates/example-task.json", read("tasks/example.json"));
 for (const name of ["acceptance-record", "config", "task", "result"])
   files.set(`schemas/${name}.schema.json`, read(`schemas/${name}.schema.json`));
@@ -150,7 +150,7 @@ for (const name of ["fflate", "saxes", "xmlchars"]) {
 files.set("THIRD_PARTY_NOTICES.md", notices.trimEnd() + "\n");
 const bundled = await build({
   absWorkingDir: root,
-  entryPoints: ["harness/cli.ts"],
+  entryPoints: ["factory/cli.ts"],
   bundle: true,
   platform: "node",
   target: "node22",
@@ -164,7 +164,7 @@ const bundled = await build({
 files.set("runtime/cli.mjs", bundled.outputFiles[0].text);
 const hookBundle = await build({
   absWorkingDir: root,
-  entryPoints: ["harness/hook-entry.ts"],
+  entryPoints: ["factory/hook-entry.ts"],
   bundle: true,
   platform: "node",
   target: "node22",
@@ -225,7 +225,7 @@ if (args.includes("--archive")) {
   );
   mkdirSync(join(root, "dist"), { recursive: true });
   writeFileSync(
-    join(root, `dist/codex-harness-${manifest.version}.zip`),
+    join(root, `dist/codex-factory-${manifest.version}.zip`),
     zipSync(entries),
   );
 }

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseConfig } from "../harness/models.js";
-import { resolvePolicy, classifyChanges } from "../harness/policy.js";
+import { parseConfig } from "../factory/models.js";
+import { resolvePolicy, classifyChanges } from "../factory/policy.js";
 const cfg = () =>
   parseConfig({
     schema_version: 2,
@@ -29,7 +29,7 @@ test("v2 allows scoped unit tests but trusted controls always win", () => {
   assert.deepEqual(classifyChanges(["tests/unit/a.ts"], ["tests/unit"], p), []);
   for (const path of [
     "acceptance/check.mjs",
-    "harness.json",
+    "factory.json",
     "package.json",
     ".codex/config.toml",
   ])
@@ -64,10 +64,10 @@ test("v2 rejects malformed policy and does not silently migrate v1", () => {
 import { repo, git, TASK } from "./helpers.js";
 import { writeFileSync, mkdirSync, symlinkSync, renameSync } from "node:fs";
 import { join } from "node:path";
-import { scopeViolations } from "../harness/verify.js";
-import { runTask } from "../harness/runner.js";
+import { scopeViolations } from "../factory/verify.js";
+import { runTask } from "../factory/runner.js";
 import { fake, report } from "./helpers.js";
-import { taskDigest } from "../harness/readiness.js";
+import { taskDigest } from "../factory/readiness.js";
 test("v2 protects nested manifests and compiler settings", () => {
   const p = resolvePolicy(cfg());
   p.editable_paths = ["packages"];
@@ -121,7 +121,7 @@ test("v2 freezes policy and stops worker configuration changes", async (t) => {
     r.path,
     TASK,
     config,
-    fake(r.root, `fs.writeFileSync('harness.json','{}');${report}`),
+    fake(r.root, `fs.writeFileSync('factory.json','{}');${report}`),
     acceptance,
   );
   assert.equal(result.status, "failed");
