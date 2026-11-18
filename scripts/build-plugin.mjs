@@ -75,9 +75,10 @@ for (const name of readdirSync(join(root, ".agents/skills")).sort()) {
   const end = text.indexOf("\n---", 4) + 4;
   if (end < 4) throw new Error(`Missing skill frontmatter: ${name}`);
   const note =
-    '\n\nResolve <PLUGIN_ROOT> from this installed skill path (two directories above).\nRun commands with the target project as the working directory, or supply\n`--repo "<PROJECT_ROOT>"`; source/task/config arguments resolve from the caller\nworking directory. Use absolute paths when working elsewhere. Never assume the\nproject contains this plugin’s npm scripts or edit the plugin installation.\nUse installed skill names as exposed by the host, including namespaces.\nIf not adopted, use this plugin’s setup-project skill first.\nRead `../../references/plugin.md` for runtime requirements and role fallback.\n';
+    '\n\nResolve <PLUGIN_ROOT> from this installed skill path (two directories above).\nRun commands with the target project as the working directory, or supply\n`--repo "<PROJECT_ROOT>"`; source/task/config arguments resolve from the caller\nworking directory. Use absolute paths when working elsewhere. Never assume the\nproject contains this plugin’s npm scripts or edit the plugin installation.\nUse installed skill names as exposed by the host, including namespaces.\nIf not adopted, use this plugin’s factory-setup skill first.\nRead `../../references/plugin.md` for runtime requirements and role fallback.\n';
   text = text.slice(0, end) + note + text.slice(end);
   text = text
+    .replaceAll("docs/plugin.md", "../../references/plugin.md")
     .replaceAll("docs/hooks.md", "../../references/hooks.md")
     .replaceAll("docs/entry-paths.md", "../../references/entry-paths.md")
     .replaceAll("docs/orchestration.md", "../../references/orchestration.md")
@@ -98,13 +99,13 @@ for (const name of readdirSync(join(root, ".agents/skills")).sort()) {
       "Maintain `docs/development-state.md` using its template:",
       "Maintain the project’s `docs/factory/development-state.md` using `../../templates/development-state.md`:",
     );
-  if (name === "coordinate-development")
+  if (name === "factory-pipeline")
     text +=
       "\nUse `../../references/design-checklist.md` to identify applicable contract and acceptance work before parallel builders.\nWhen using a native architect/reviewer, supply the relevant skill text and\n`../../references/roles/<role>.toml` behavioral instructions directly if the\nproject role cannot access plugin skills. Do not assume bundled TOML is loaded.\n";
-  if (name === "architect-intake")
+  if (name === "factory-intake")
     text +=
       "\nConsult `../../references/design-checklist.md` for applicable edge cases; do not turn it into a generic questionnaire.\n";
-  if (name === "implement-task")
+  if (name === "factory-build")
     text +=
       "\nFor bug fixes or review findings, use the reproduction procedure in `../../references/design-checklist.md`.\n";
   files.set(`skills/${name}/SKILL.md`, text);
@@ -115,7 +116,13 @@ files.set("templates/factory.json", read("plugin-src/templates/factory.json"));
 files.set("templates/example-task.json", read("tasks/example.json"));
 for (const name of ["acceptance-record", "config", "task", "result"])
   files.set(`schemas/${name}.schema.json`, read(`schemas/${name}.schema.json`));
-for (const name of ["architect", "reviewer"])
+for (const name of [
+  "architect",
+  "reviewer",
+  "factory-architect",
+  "factory-builder",
+  "factory-reviewer",
+])
   files.set(
     `references/roles/${name}.toml`,
     read(`.codex/agents/${name}.toml`),
@@ -178,7 +185,7 @@ files.set("runtime/hooks.mjs", hookBundle.outputFiles[0].text);
 const names = [...files.keys()].filter((p) =>
   /^skills\/[^/]+\/SKILL.md$/.test(p),
 );
-if (names.length !== 6) throw new Error("Expected six plugin skills");
+if (names.length !== 8) throw new Error("Expected eight plugin skills");
 for (const p of names) {
   const name = p.split("/")[1];
   if (!files.get(p).startsWith(`---\nname: ${name}\ndescription: `))

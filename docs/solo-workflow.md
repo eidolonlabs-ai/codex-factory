@@ -4,7 +4,7 @@ Prepare the approved task and acceptance record, then choose an [execution mode]
 
 ## Adopt and prepare
 
-Use the [entry paths](entry-paths.md) to establish the project baseline. Task and acceptance records use schema version 1, including when `factory.json` uses v3.
+Use the [entry paths](entry-paths.md) (`$factory-intake` + `$factory-plan`) to push back on ambiguities, lock Milestone 1.5 adversarial tests, and establish the project baseline. Task and acceptance records use schema version 1, including when `factory.json` uses v3.
 
 ```json
 {
@@ -30,10 +30,8 @@ The draft includes the task digest, resolved base, proposed checks, and an unres
 
 ## Execute and inspect
 
-For interactive work, run `activate TASK --acceptance RECORD` in the checkout.
-The trusted [Stop hook](hooks.md) runs verification and review. Use task-aware
-`verify` and `review` for explicit checks and follow-up evidence. For unattended
-work, run `run TASK --acceptance RECORD`.
+For interactive work, run `activate TASK --acceptance RECORD` (`$factory-plan`) in the checkout before `$factory-build`.
+The trusted [Stop hook](hooks.md) runs verification and review. Use `$factory-verify` (`verify`) and `$factory-review` (`review`) for explicit checks and follow-up evidence, and `$factory-status` (`hooks-status`, `status`, `runs`, `handoff`) to inspect freshness. For unattended work, run `run TASK --acceptance RECORD`.
 
 `runs` lists up to 50 records per category. `status RUN_ID` preserves raw JSON;
 `handoff RUN_ID` reports freshness, blockers and retained artifact locations.

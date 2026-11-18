@@ -58,7 +58,7 @@ test("plugin manifests, resource links and generated files stay synchronized", (
     compat.interface,
   );
   const skills = readdirSync(join(source, "skills"));
-  assert.equal(skills.length, 6);
+  assert.equal(skills.length, 8);
   for (const name of skills) {
     const path = join(source, "skills", name);
     const text = readFileSync(join(path, "SKILL.md"), "utf8");

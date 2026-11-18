@@ -4,10 +4,10 @@ Use only categories relevant to the proposed change. Read existing contracts,
 nearby examples, nested project instructions, and tests before asking questions.
 Record consequential decisions and explicit exclusions in the approved spec.
 
-## Intake and contract decisions
+## Intake and contract decisions (Shift-Left Pushback)
 
-- Identify users, essential journeys, failure behavior, and measurable done
-  conditions. Decide which checks require real services, browsers or devices.
+- Push back (`needs_clarification`) in `$factory-intake` whenever the owner's input is vague, skips failure behavior, or leaves applicable 4-Part Edge-Case Matrix questions unanswered.
+- Identify users, essential journeys, failure behavior, and measurable done conditions. Decide which checks require real services, browsers or devices.
 - For stateful/event systems, establish duplicate and out-of-order behavior,
   concurrency ownership, retry/idempotency rules, clocks/timezones, retention,
   deletion, and cross-service atomicity or recovery where applicable.

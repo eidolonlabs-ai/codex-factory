@@ -1,4 +1,7 @@
 import { Interrupted } from "./process.js";
+import { decideGuard, evaluateShellGuard } from "./guard.js";
+
+export { decideGuard };
 import { createHash, randomUUID } from "node:crypto";
 import {
   existsSync,
@@ -122,6 +125,13 @@ export function guardCommand(command: string): string | undefined {
     )
   )
     return "Destructive bulk operation requires a separate operator action";
+  const evalResult = evaluateShellGuard(command, { respectOutside: false });
+  if (evalResult.decision !== "allow") {
+    return (
+      evalResult.reason ??
+      "Destructive or restricted shell operation is prohibited"
+    );
+  }
   return undefined;
 }
 export function patchPaths(command: string): string[] {

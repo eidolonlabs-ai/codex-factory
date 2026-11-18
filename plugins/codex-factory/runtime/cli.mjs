@@ -2449,6 +2449,17 @@ async function runProcess(argv, cwd, seconds, log_dir, stdin = "", envOverrides 
   }
 }
 
+// factory/guard.ts
+var SHELL_WRAPPER_CMDS = /* @__PURE__ */ new Set(["sh", "bash", "zsh", "dash", "ksh", "ash"]);
+var PIPE_EXEC_TARGETS = /* @__PURE__ */ new Set([
+  ...SHELL_WRAPPER_CMDS,
+  "python",
+  "python3",
+  "perl",
+  "ruby",
+  "node"
+]);
+
 // factory/hooks.ts
 import { createHash as createHash5, randomUUID as randomUUID4 } from "node:crypto";
 import {

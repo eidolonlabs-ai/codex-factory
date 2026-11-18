@@ -4,9 +4,10 @@
 | --- | --- |
 | Install, update, or rebuild the plugin | [Plugin setup](plugin.md) |
 | Apply the template to my own project | [Adoption](adoption.md) |
-| Start a new project, adopt an existing repo, fix a bug, or add a feature | [Entry paths](entry-paths.md) |
+| Start a new project, adopt an existing repo, fix a bug, add a feature, or refactor/migrate | [Entry paths](entry-paths.md) |
 | Choose interactive or unattended execution | [Execution modes](execution-modes.md) |
 | Use Desktop Worktree chats | [Desktop](desktop.md) and [builder prompts](builder-prompts.md) |
+| Review unified family rules & ChronoGraph benchmark | [Family contract](../CONTRACT.md) and [ChronoGraph benchmark](../benchmarks/chronograph/README.md) |
 | Run the factory from a terminal | [CLI reference](cli.md) |
 | Review and activate native hooks | [Hooks](hooks.md) |
 | Run parallel tasks with dependencies | [Orchestration](orchestration.md) |

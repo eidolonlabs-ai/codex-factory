@@ -9,7 +9,7 @@ See the [canonical Markdown intake result](results/canonical-markdown-intake.md)
 For a headless CLI benchmark, run from the template root:
 
 ```sh
-npm run harness -- benchmark --timeout 1200
+npm run factory -- benchmark --timeout 1200
 ```
 
 The command starts a fresh read-only architect session in a new workspace containing the canonical Markdown verbatim as `intake.txt`. It does not build ChronoGraph, launch Docker, execute the destructive seed/reset script, or send the evaluator rubric to the architect. No hardcoded list of expected deficiencies appears in the generic architect prompt.
@@ -29,3 +29,9 @@ Compare repeated independent runs with the same original hash, generic prompt ha
 Show the questions to the owner in Desktop. Keep answers in a separate resolution document; never overwrite the intake. Once blockers are resolved, approve the resulting specification and write a normal implementation task. No automatic builder dispatch is wired to an architect's self-reported readiness.
 
 The [end-to-end build run](results/end-to-end-build.md) extends this benchmark through approved decisions, task activation, implementation, live acceptance, a deliberate regression, and a review handoff.
+
+## Concurrent Docker & Port Conventions (`codex-factory`)
+
+To avoid collisions if all four factories test or preview ChronoGraph simultaneously:
+- **Gate runs**: Never use `container_name`; automated gates use unique `factory-<uuid>` (`factory-codex-<run_id>`) Compose projects with zero fixed host ports (internal Compose network or ephemeral `127.0.0.1::<port>`).
+- **Interactive / Browser preview**: Use project name `chronograph-codex-preview` and Codex Factory's dedicated default host port block: `WEB_PORT=3300`, `API_PORT=3301`, `DB_PORT=54323`, `NEO4J_HTTP_PORT=37474`, `NEO4J_BOLT_PORT=37687`.

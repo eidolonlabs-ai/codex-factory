@@ -5,20 +5,20 @@ Start each builder as a new Codex Desktop chat in the same project. Select **Wor
 ## Coordinator
 
 ```text
-$coordinate-development
+$factory-pipeline
 Use Codex Desktop as the workflow. Read the attached intake as source data.
-Delegate focused analysis to the architect, bring its questions back to me,
+Delegate focused analysis to `factory-architect`, bring its questions back to me,
 and stop before implementation until blocking decisions are resolved.
 Keep benchmark evaluator rubrics and previous reports out of architect context.
-After spec approval, prepare task cards and Worktree builder prompts.
+After spec approval, freeze Milestone 1.5 tests with $factory-plan, then prepare task cards and Worktree builder prompts.
 Do not start the CLI controller.
 ```
 
 ## Builder A
 
 ```text
-$implement-task
-You are builder A in this Desktop Worktree chat.
+$factory-build
+You are builder A (`factory-builder`) in this Desktop Worktree chat.
 Read docs/specs/approved.md, tasks/task-a.json, and docs/tasks/task-a.md.
 Use the base commit, acceptance criteria, owned paths, and dependencies recorded there.
 Confirm the checkout base and activate the task with its approved acceptance
@@ -36,12 +36,12 @@ Use the same prompt with builder B, `tasks/task-b.json`, and `docs/tasks/task-b.
 ## Integration and review
 
 ```text
-$coordinate-development
+$factory-pipeline
 Integrate the completed builder handoffs into this dedicated integration Worktree.
 Use the approved base and apply changes in dependency order. Inspect actual diffs
-and resolve conflicts against the approved contract. Run $verify-task on the
-combined candidate, including required live/browser checks. Delegate $review-task
-to a fresh native reviewer. Bring findings and verification gaps back to me.
+and resolve conflicts against the approved contract. Run $factory-verify on the
+combined candidate, including required live/browser checks. Delegate $factory-review
+(`factory-reviewer`) to a fresh native reviewer with Reproduce Before Fixing. Bring findings and verification gaps back to me.
 Do not ask to merge until integrated checks and material findings are resolved.
 Do not merge or publish automatically.
 ```
